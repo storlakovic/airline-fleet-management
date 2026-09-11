@@ -9,13 +9,14 @@ classDiagram
     class Route
     class Flight
 
-    Airline "1" --> "n" Aircraft : operates
-    Airline "1" --> "n" Flight : operates
+    Airline "1" --> "0..*" Aircraft : operates
+    Airline "n" --> "0..*" Route : operates
+    Airline "1" --> "0..*" Flight : operates
 
-    Aircraft "n" --> "1" AircraftType : has type
+    Aircraft "0..*" --> "1" AircraftType : has type
 
-    Flight "n" --> "1" Route : follows
-    Flight "n" --> "1" Aircraft : assigned aircraft
+    Flight "0..*" --> "1" Route : follows
+    Flight "0..*" --> "0..1" Aircraft : assigned aircraft
 
-    Route "n" --> "1" Airport : origin
-    Route "n" --> "1" Airport : destination
+    Route "0..*" --> "1" Airport : origin
+    Route "0..*" --> "1" Airport : destination

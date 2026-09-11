@@ -11,7 +11,6 @@ Represents an airline that operates flights and manages a fleet of aircraft.
 * An airline can operate one or many aircraft.
 * An airline can operate flights between multiple airports.
 * An airline operates flights on defined routes.
-* An airline may operate an aircraft that it does not own, for example through a lease agreement.
 
 ## Aircraft
 
