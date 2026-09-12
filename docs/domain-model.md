@@ -2,7 +2,6 @@
 
 This document describes the core domain concepts of the Airline Operations Simulator, their purpose, responsibilities, and important business rules.
 
-
 ## Aircraft
 
 Represents a specific physical aircraft.
@@ -13,7 +12,6 @@ Examples include individual aircraft identified by registrations such as `OE-LPA
 
 * An aircraft must have exactly one aircraft type.
 * An aircraft has a unique registration.
-* An aircraft is assigned to one operating airline at a given time.
 * An aircraft can be assigned to flights if it is operational and available.
 
 ## Aircraft Type
@@ -55,7 +53,6 @@ Example:
 * A route must have exactly one origin airport.
 * A route must have exactly one destination airport.
 * The origin and destination must be different airports.
-* An airline may operate multiple flights on the same route.
 
 ## Flight
 
@@ -67,7 +64,6 @@ Example:
 
 ### Rules
 
-* A flight must belong to an airline.
 * A flight must be associated with exactly one route.
 * A flight has a scheduled departure and arrival time.
 * A flight may have an aircraft assigned to it.
