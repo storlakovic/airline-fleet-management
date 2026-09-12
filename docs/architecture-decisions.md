@@ -71,3 +71,22 @@ Use PostgreSQL.
 * PostgreSQL is well supported by Spring Boot, JPA, Docker, and Testcontainers.
 * Using PostgreSQL-specific features can reduce database portability.
 
+## ADR-004: Package Structure
+
+### Status
+
+Accepted
+
+### Context
+
+The application consists of distinct business capabilities such as aircraft management, airport management, routes, and flights.
+
+### Decision
+
+Organize the application primarily by feature rather than by technical layer.
+
+### Consequences
+
+- Related code stays close together.
+- The package structure reflects the business domain.
+- Features can evolve more independently.
