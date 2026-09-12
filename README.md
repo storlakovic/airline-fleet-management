@@ -1,6 +1,6 @@
 # Airline Operations Simulator
 
-A backend-focused simulation project for modeling the day-to-day operations of an airline.
+A simulation project for modeling the day-to-day operations of an airline.
 
 The goal is to represent core airline operations such as aircraft management, airport and route management, flight scheduling, aircraft assignment, operational states, and conflict detection.
 
