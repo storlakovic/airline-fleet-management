@@ -49,6 +49,7 @@ Represents a physical airport from which flights can depart or at which flights 
 
 * An airport has a unique identifier such as an IATA or ICAO code.
 * An airport can be the origin or destination of multiple routes and flights.
+* An airport has an operational status representing its current availability for operations.
 
 ## Route
 
