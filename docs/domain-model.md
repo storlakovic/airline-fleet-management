@@ -2,15 +2,6 @@
 
 This document describes the core domain concepts of the Airline Operations Simulator, their purpose, responsibilities, and important business rules.
 
-## Airline
-
-Represents an airline that operates flights and manages a fleet of aircraft.
-
-### Rules
-
-* An airline can operate one or many aircraft.
-* An airline can operate flights between multiple airports.
-* An airline operates flights on defined routes.
 
 ## Aircraft
 

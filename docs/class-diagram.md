@@ -2,16 +2,11 @@
 
 ```mermaid
 classDiagram
-    class Airline
     class Aircraft
     class AircraftType
     class Airport
     class Route
     class Flight
-
-    Airline "1" --> "0..*" Aircraft : operates
-    Airline "n" --> "0..*" Route : operates
-    Airline "1" --> "0..*" Flight : operates
 
     Aircraft "0..*" --> "1" AircraftType : has type
 
