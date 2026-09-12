@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: airline-opsim-postgres
+    environment:
+      POSTGRES_DB: airline_opsim
+      POSTGRES_USER: airline_user
+      POSTGRES_PASSWORD: airline_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
