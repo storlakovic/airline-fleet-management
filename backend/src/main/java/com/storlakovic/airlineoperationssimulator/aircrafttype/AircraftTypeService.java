@@ -28,7 +28,7 @@ public class AircraftTypeService {
     public List<AircraftType> importAircraftTypes() {
         try {
             List<AircraftType> aircraftTypes = loadAircraftTypes();
-            return repository.saveAll(aircraftTypes);
+            return saveNewAircraftTypes(aircraftTypes);
         } catch (IOException | IllegalArgumentException e) {
             throw new AircraftTypeImportException("Failed to import aircraft types from FAA reference data", e);
         }
@@ -73,7 +73,7 @@ public class AircraftTypeService {
             }
         }
 
-        return saveNewAircraftTypes(aircraftTypes);
+        return aircraftTypes;
     }
 
     List<AircraftType> saveNewAircraftTypes(List<AircraftType> aircraftTypes) {

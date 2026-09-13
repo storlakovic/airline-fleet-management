@@ -1,6 +1,7 @@
 package com.storlakovic.airlineoperationssimulator.aircrafttype;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -16,7 +17,7 @@ public class AircraftTypeController {
         this.aircraftTypeService = aircraftTypeService;
     }
 
-    @GetMapping(path = "/import")
+    @PostMapping("/import")
     List<AircraftType> importAllAircraftTypes() throws IOException {
         return aircraftTypeService.importAircraftTypes();
     }
