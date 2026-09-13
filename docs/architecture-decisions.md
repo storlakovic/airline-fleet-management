@@ -90,3 +90,34 @@ Organize the application primarily by feature rather than by technical layer.
 - Related code stays close together.
 - The package structure reflects the business domain.
 - Features can evolve more independently.
+
+---
+
+## ADR-005: Database Schema Migrations
+
+### Status
+
+Accepted
+
+### Context
+
+The database schema must evolve together with the application while remaining reproducible and version controlled.
+
+### Decision
+
+Use Flyway for database schema migrations.
+
+Database schema changes are stored as versioned SQL migrations under `src/main/resources/db/migration`.
+
+Hibernate is used for object-relational mapping and validates the database schema against the JPA model instead of automatically modifying it.
+
+Migration SQL may be generated from the JPA model using development tooling, but generated migrations must be reviewed before they are committed and executed.
+
+### Consequences
+
+- Database schema changes are version controlled and reproducible.
+- Flyway tracks which migrations have already been applied.
+- Hibernate does not automatically modify the production schema.
+- JPA entities and the database schema can be validated against each other.
+- Generated migration scripts must still be reviewed for correctness.
+- Schema changes require explicit migrations instead of relying on `ddl-auto=update`.
