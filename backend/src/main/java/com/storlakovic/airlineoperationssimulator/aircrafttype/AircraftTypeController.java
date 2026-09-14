@@ -18,7 +18,7 @@ public class AircraftTypeController {
     }
 
     @GetMapping
-    List<AircraftTypeResponse> getALlAircraftTypes(){
+    List<AircraftTypeResponse> getAllAircraftTypes(){
         return aircraftTypeService.getAll();
     }
 
