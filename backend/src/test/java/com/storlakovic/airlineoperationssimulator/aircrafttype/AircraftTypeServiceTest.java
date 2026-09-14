@@ -1,5 +1,6 @@
 package com.storlakovic.airlineoperationssimulator.aircrafttype;
 
+import com.storlakovic.airlineoperationssimulator.aircrafttype.dto.AircraftTypeResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -219,6 +220,67 @@ class AircraftTypeServiceTest {
 
         assertThat(result.getFirst().getIcaoCode())
                 .isEqualTo("B738");
+    }
+
+    @Test
+    void shouldReturnAllAircraftTypes() {
+        AircraftType a320 =
+                new AircraftType("AIRBUS", "Airbus A320", "A320");
+
+        AircraftType b738 =
+                new AircraftType("BOEING", "Boeing 737-800", "B738");
+
+        when(repository.findAll())
+                .thenReturn(List.of(a320, b738));
+
+        List<AircraftTypeResponse> result = service.getAll();
+
+        assertThat(result).hasSize(2);
+    }
+
+    @Test
+    void shouldMapAircraftTypeToResponse() {
+        AircraftType aircraftType =
+                new AircraftType("AIRBUS", "Airbus A320", "A320");
+
+        when(repository.findAll())
+                .thenReturn(List.of(aircraftType));
+
+        List<AircraftTypeResponse> result = service.getAll();
+
+        AircraftTypeResponse response = result.getFirst();
+
+        assertThat(response.getManufacturer()).isEqualTo("AIRBUS");
+        assertThat(response.getModel()).isEqualTo("Airbus A320");
+        assertThat(response.getIcaoCode()).isEqualTo("A320");
+    }
+
+    @Test
+    void shouldReturnEmptyListWhenNoAircraftTypesExist() {
+        when(repository.findAll())
+                .thenReturn(List.of());
+
+        List<AircraftTypeResponse> result = service.getAll();
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void shouldMapMultipleAircraftTypes() {
+        AircraftType a320 =
+                new AircraftType("AIRBUS", "Airbus A320", "A320");
+
+        AircraftType b738 =
+                new AircraftType("BOEING", "Boeing 737-800", "B738");
+
+        when(repository.findAll())
+                .thenReturn(List.of(a320, b738));
+
+        List<AircraftTypeResponse> result = service.getAll();
+
+        assertThat(result)
+                .extracting(AircraftTypeResponse::getIcaoCode)
+                .containsExactly("A320", "B738");
     }
 
     private Resource csv(String content) {
