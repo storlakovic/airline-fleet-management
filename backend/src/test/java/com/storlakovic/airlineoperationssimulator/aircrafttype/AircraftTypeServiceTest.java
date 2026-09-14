@@ -31,9 +31,6 @@ class AircraftTypeServiceTest {
                 B738,BOEING,Boeing 737-800
                 """);
 
-        when(repository.saveAll(anyList()))
-                .thenAnswer(invocation -> invocation.getArgument(0));
-
         List<AircraftType> result =
                 service.readAircraftTypes(resource);
 
@@ -46,9 +43,6 @@ class AircraftTypeServiceTest {
                 ICAO_Code,Manufacturer,Model_BADA
                 A320,AIRBUS,Airbus A320
                 """);
-
-        when(repository.saveAll(anyList()))
-                .thenAnswer(invocation -> invocation.getArgument(0));
 
         AircraftType result =
                 service.readAircraftTypes(resource).getFirst();
@@ -64,9 +58,6 @@ class AircraftTypeServiceTest {
                 ICAO_Code,Manufacturer,Model_BADA
                 """);
 
-        when(repository.saveAll(anyList()))
-                .thenAnswer(invocation -> invocation.getArgument(0));
-
         List<AircraftType> result =
                 service.readAircraftTypes(resource);
 
@@ -79,9 +70,6 @@ class AircraftTypeServiceTest {
                 ICAO_Code,Manufacturer,Model_BADA
                 A320,AIRBUS,Airbus A320
                 """);
-
-        when(repository.saveAll(anyList()))
-                .thenAnswer(invocation -> invocation.getArgument(0));
 
         List<AircraftType> result =
                 service.readAircraftTypes(resource);
@@ -98,9 +86,6 @@ class AircraftTypeServiceTest {
                 B738,BOEING,"Boeing 737, Series 800"
                 """);
 
-        when(repository.saveAll(anyList()))
-                .thenAnswer(invocation -> invocation.getArgument(0));
-
         AircraftType result =
                 service.readAircraftTypes(resource).getFirst();
 
@@ -114,9 +99,6 @@ class AircraftTypeServiceTest {
                 ICAO_Code,FAA_Designator,Manufacturer,Model_BADA,Num_Engines,MTOW_lb
                 A20N,A20N,AIRBUS,Airbus A320 Neo,2,"174,165"
                 """);
-
-        when(repository.saveAll(anyList()))
-                .thenAnswer(invocation -> invocation.getArgument(0));
 
         AircraftType result =
                 service.readAircraftTypes(resource).getFirst();
@@ -133,9 +115,6 @@ class AircraftTypeServiceTest {
                 A21N,AIRBUS,Airbus A321 Neo,,,
                 """);
 
-        when(repository.saveAll(anyList()))
-                .thenAnswer(invocation -> invocation.getArgument(0));
-
         List<AircraftType> result =
                 service.readAircraftTypes(resource);
 
@@ -151,9 +130,6 @@ class AircraftTypeServiceTest {
                 AIRBUS,Airbus A320
                 """);
 
-        when(repository.saveAll(anyList()))
-                .thenAnswer(invocation -> invocation.getArgument(0));
-
         assertThatThrownBy(() ->
                 service.readAircraftTypes(resource)
         ).isInstanceOf(IllegalArgumentException.class);
@@ -166,9 +142,6 @@ class AircraftTypeServiceTest {
                 A320,Airbus A320
                 """);
 
-        when(repository.saveAll(anyList()))
-                .thenAnswer(invocation -> invocation.getArgument(0));
-
         assertThatThrownBy(() ->
                 service.readAircraftTypes(resource)
         ).isInstanceOf(IllegalArgumentException.class);
@@ -180,9 +153,6 @@ class AircraftTypeServiceTest {
                 ICAO_Code,Manufacturer
                 A320,AIRBUS
                 """);
-
-        when(repository.saveAll(anyList()))
-                .thenAnswer(invocation -> invocation.getArgument(0));
 
         assertThatThrownBy(() ->
                 service.readAircraftTypes(resource)
