@@ -1,5 +1,6 @@
 package com.storlakovic.airlineoperationssimulator.aircrafttype;
 
+import com.storlakovic.airlineoperationssimulator.aircrafttype.dto.AircraftTypeResponse;
 import com.storlakovic.airlineoperationssimulator.common.AircraftTypeImportException;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
@@ -23,6 +24,11 @@ public class AircraftTypeService {
 
     public AircraftTypeService(AircraftTypeRepository repository) {
         this.repository = repository;
+    }
+
+    public List<AircraftTypeResponse> getAll() {
+        List<AircraftType> aircraftTypes = repository.findAll();
+        return aircraftTypes.stream().map((aircraftType) -> new AircraftTypeResponse(aircraftType.getId(), aircraftType.getManufacturer(), aircraftType.getModel(), aircraftType.getIcaoCode())).toList();
     }
 
     public List<AircraftType> importAircraftTypes() {

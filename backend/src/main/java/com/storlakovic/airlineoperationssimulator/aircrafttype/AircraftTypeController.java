@@ -1,5 +1,6 @@
 package com.storlakovic.airlineoperationssimulator.aircrafttype;
 
+import com.storlakovic.airlineoperationssimulator.aircrafttype.dto.AircraftTypeResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,6 +16,11 @@ public class AircraftTypeController {
 
     AircraftTypeController(AircraftTypeRepository repository,  AircraftTypeService aircraftTypeService) {
         this.aircraftTypeService = aircraftTypeService;
+    }
+
+    @GetMapping
+    List<AircraftTypeResponse> getALlAircraftTypes() throws IOException {
+        return aircraftTypeService.getAll();
     }
 
     @PostMapping("/import")
