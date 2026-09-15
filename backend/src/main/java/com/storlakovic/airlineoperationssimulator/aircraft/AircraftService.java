@@ -4,6 +4,7 @@ package com.storlakovic.airlineoperationssimulator.aircraft;
 import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftCreateRequest;
 import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftDetailsResponse;
 import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftResponse;
+import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftUpdateRequest;
 import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftType;
 import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftTypeRepository;
 import com.storlakovic.airlineoperationssimulator.common.AircraftAlreadyExistsException;
@@ -59,5 +60,22 @@ public class AircraftService {
                 "Aircraft with id " + id + " not found"
         ));
         return new AircraftDetailsResponse(aircraft.getId(), aircraft.getRegistration(), aircraft.getAircraftType().getId(), aircraft.getAircraftType().getModel(), aircraft.getAircraftType().getIcaoCode(), aircraft.getAircraftType().getManufacturer(), aircraft.getStatus()) ;
+    }
+
+    public AircraftResponse updateAircraft(Long aircraftId, AircraftUpdateRequest request) {
+        Aircraft aircraft = aircraftRepository.findById(aircraftId).orElseThrow(() -> new AircraftNotFoundException("Aircraft with id " + aircraftId + " not found"));
+
+        aircraft.changeStatus(request.getStatus());
+
+        Aircraft savedAircraft = aircraftRepository.save(aircraft);
+
+        return new AircraftResponse(
+                savedAircraft.getId(),
+                savedAircraft.getRegistration(),
+                savedAircraft.getAircraftType().getId(),
+                savedAircraft.getAircraftType().getModel(),
+                savedAircraft.getAircraftType().getIcaoCode(),
+                savedAircraft.getStatus()
+        );
     }
 }

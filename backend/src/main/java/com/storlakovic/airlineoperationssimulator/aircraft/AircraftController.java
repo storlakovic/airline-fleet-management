@@ -3,6 +3,7 @@ package com.storlakovic.airlineoperationssimulator.aircraft;
 import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftCreateRequest;
 import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftDetailsResponse;
 import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftResponse;
+import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftUpdateRequest;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +21,12 @@ public class AircraftController {
     @PostMapping("register")
     public AircraftResponse registerAircraft(@RequestBody AircraftCreateRequest request) {
         return aircraftService.addAircraftToFleet(request);
+    }
+
+    @PutMapping("update/{id}")
+    public AircraftResponse updateAircraft( @PathVariable Long id,
+                                            @RequestBody AircraftUpdateRequest request) {
+        return aircraftService.updateAircraft(id, request);
     }
 
     @GetMapping

@@ -3,10 +3,13 @@ package com.storlakovic.airlineoperationssimulator.aircraft;
 import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftCreateRequest;
 import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftDetailsResponse;
 import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftResponse;
+import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftUpdateRequest;
 import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftType;
 import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftTypeRepository;
 import com.storlakovic.airlineoperationssimulator.common.AircraftAlreadyExistsException;
 import com.storlakovic.airlineoperationssimulator.common.AircraftNotFoundException;
+import com.storlakovic.airlineoperationssimulator.common.IllegalStateException;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -318,6 +321,94 @@ class AircraftServiceTest {
         ).isInstanceOf(AircraftNotFoundException.class);
     }
 
+    @Test
+    void shouldUpdateAircraftStatus() {
+        AircraftType aircraftType =
+                createAircraftType(
+                        1L,
+                        "AIRBUS",
+                        "Airbus A320",
+                        "A320"
+                );
+
+        Aircraft aircraft =
+                createAircraft(
+                        10L,
+                        aircraftType,
+                        "OE-LBA"
+                );
+
+        when(repository.findById(10L))
+                .thenReturn(Optional.of(aircraft));
+
+        when(repository.save(aircraft))
+                .thenReturn(aircraft);
+
+        AircraftResponse result =
+                service.updateAircraft(
+                        10L,
+                        new AircraftUpdateRequest(AircraftStatus.MAINTENANCE)
+                );
+
+        assertThat(result.getStatus())
+                .isEqualTo(AircraftStatus.MAINTENANCE);
+
+        verify(repository).save(aircraft);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenUpdatingMissingAircraft() {
+        when(repository.findById(999L))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                service.updateAircraft(
+                        999L,
+                        new  AircraftUpdateRequest(AircraftStatus.MAINTENANCE)
+                )
+        ).isInstanceOf(AircraftNotFoundException.class);
+
+        verify(repository, never())
+                .save(any(Aircraft.class));
+    }
+
+    @Test
+    void shouldThrowExceptionForInvalidStatusTransition() {
+        AircraftType aircraftType =
+                createAircraftType(
+                        1L,
+                        "AIRBUS",
+                        "Airbus A320",
+                        "A320"
+                );
+
+        Aircraft aircraft =
+                createAircraft(
+                        10L,
+                        aircraftType,
+                        "OE-LBA"
+                );
+
+        ReflectionTestUtils.setField(
+                aircraft,
+                "status",
+                AircraftStatus.RETIRED
+        );
+
+        when(repository.findById(10L))
+                .thenReturn(Optional.of(aircraft));
+
+        assertThatThrownBy(() ->
+                service.updateAircraft(
+                        10L,
+                        new  AircraftUpdateRequest(AircraftStatus.RETIRED)
+                )
+        ).isInstanceOf(IllegalStateException.class);
+
+        verify(repository, never())
+                .save(any(Aircraft.class));
+    }
+
 
     private AircraftType createAircraftType(
             Long id,
@@ -361,4 +452,6 @@ class AircraftServiceTest {
 
         return aircraft;
     }
+
+
 }
