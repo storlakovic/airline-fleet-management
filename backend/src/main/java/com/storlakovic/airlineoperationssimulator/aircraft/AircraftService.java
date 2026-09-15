@@ -7,6 +7,7 @@ import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftResponse;
 import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftType;
 import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftTypeRepository;
 import com.storlakovic.airlineoperationssimulator.common.AircraftAlreadyExistsException;
+import com.storlakovic.airlineoperationssimulator.common.AircraftNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -54,7 +55,9 @@ public class AircraftService {
     }
 
     public AircraftDetailsResponse getAircraftById(Long id) {
-        Aircraft aircraft = aircraftRepository.findById(id).orElseThrow();
+        Aircraft aircraft = aircraftRepository.findById(id).orElseThrow(() -> new AircraftNotFoundException(
+                "Aircraft with id " + id + " not found"
+        ));
         return new AircraftDetailsResponse(aircraft.getId(), aircraft.getRegistration(), aircraft.getAircraftType().getId(), aircraft.getAircraftType().getModel(), aircraft.getAircraftType().getIcaoCode(), aircraft.getAircraftType().getManufacturer(), aircraft.getStatus()) ;
     }
 }
