@@ -1,11 +1,15 @@
 package com.storlakovic.airlineoperationssimulator.aircraft;
 
 import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftCreateRequest;
+import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftDetailsResponse;
+import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftResponse;
 import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftType;
 import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftTypeRepository;
 import com.storlakovic.airlineoperationssimulator.common.AircraftAlreadyExistsException;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -28,51 +32,71 @@ class AircraftServiceTest {
 
     @Test
     void shouldAddValidAircraft() {
-        AircraftType requestType = mock(AircraftType.class);
-
-        when(requestType.getId()).thenReturn(1L);
-
-        AircraftType storedType =
-                new AircraftType("AIRBUS", "Airbus A320", "A320");
+        AircraftType aircraftType =
+                createAircraftType(
+                        1L,
+                        "AIRBUS",
+                        "Airbus A320",
+                        "A320"
+                );
 
         AircraftCreateRequest request =
                 new AircraftCreateRequest(1L, "OE-LBA");
 
         when(aircraftTypeRepository.findById(1L))
-                .thenReturn(Optional.of(storedType));
+                .thenReturn(Optional.of(aircraftType));
 
         when(repository.save(any(Aircraft.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+                .thenAnswer(invocation -> {
+                    Aircraft aircraft = invocation.getArgument(0);
 
-        Aircraft result = service.addAircraftToFleet(request);
+                    ReflectionTestUtils.setField(
+                            aircraft,
+                            "id",
+                            10L
+                    );
+
+                    return aircraft;
+                });
+
+        AircraftResponse result =
+                service.addAircraftToFleet(request);
+
+        assertThat(result.getId())
+                .isEqualTo(10L);
 
         assertThat(result.getRegistration())
                 .isEqualTo("OE-LBA");
 
-        assertThat(result.getAircraftType())
-                .isEqualTo(storedType);
+        assertThat(result.getAircraftTypeId())
+                .isEqualTo(1L);
+
+        assertThat(result.getStatus())
+                .isEqualTo(AircraftStatus.IN_SERVICE);
     }
 
 
     @Test
     void shouldSetInitialStatusToInService() {
-        AircraftType requestType = mock(AircraftType.class);
-
-        when(requestType.getId()).thenReturn(1L);
-
-        AircraftType storedType =
-                new AircraftType("AIRBUS", "Airbus A320", "A320");
+        AircraftType aircraftType =
+                createAircraftType(
+                        1L,
+                        "AIRBUS",
+                        "Airbus A320",
+                        "A320"
+                );
 
         AircraftCreateRequest request =
                 new AircraftCreateRequest(1L, "OE-LBB");
 
         when(aircraftTypeRepository.findById(1L))
-                .thenReturn(Optional.of(storedType));
+                .thenReturn(Optional.of(aircraftType));
 
         when(repository.save(any(Aircraft.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        Aircraft result = service.addAircraftToFleet(request);
+        AircraftResponse result =
+                service.addAircraftToFleet(request);
 
         assertThat(result.getStatus())
                 .isEqualTo(AircraftStatus.IN_SERVICE);
@@ -81,10 +105,6 @@ class AircraftServiceTest {
 
     @Test
     void shouldThrowExceptionWhenAircraftTypeDoesNotExist() {
-        AircraftType requestType = mock(AircraftType.class);
-
-        when(requestType.getId()).thenReturn(999L);
-
         AircraftCreateRequest request =
                 new AircraftCreateRequest(999L, "OE-LBC");
 
@@ -99,20 +119,245 @@ class AircraftServiceTest {
                 .save(any(Aircraft.class));
     }
 
+
     @Test
     void shouldThrowExceptionWhenAircraftAlreadyExists() {
-        AircraftType aircraftType = mock(AircraftType.class);
-        when(aircraftType.getId()).thenReturn(1L);
-
         AircraftCreateRequest request =
-                new AircraftCreateRequest(999L, "OE-LBA");
+                new AircraftCreateRequest(1L, "OE-LBA");
 
         when(repository.existsAircraftByRegistration("OE-LBA"))
                 .thenReturn(true);
 
-        assertThatThrownBy(() -> service.addAircraftToFleet(request))
-                .isInstanceOf(AircraftAlreadyExistsException.class);
+        assertThatThrownBy(() ->
+                service.addAircraftToFleet(request)
+        ).isInstanceOf(AircraftAlreadyExistsException.class);
 
-        verify(repository, never()).save(any(Aircraft.class));
+        verify(repository, never())
+                .save(any(Aircraft.class));
+
+        verifyNoInteractions(aircraftTypeRepository);
+    }
+
+
+    @Test
+    void shouldReturnAllAircraft() {
+        AircraftType aircraftType =
+                createAircraftType(
+                        5L,
+                        "AIRBUS",
+                        "Airbus A320",
+                        "A320"
+                );
+
+        Aircraft first =
+                createAircraft(
+                        1L,
+                        aircraftType,
+                        "OE-LBA"
+                );
+
+        Aircraft second =
+                createAircraft(
+                        2L,
+                        aircraftType,
+                        "OE-LBB"
+                );
+
+        when(repository.findAll())
+                .thenReturn(List.of(first, second));
+
+        List<AircraftResponse> result =
+                service.getAll();
+
+        assertThat(result).hasSize(2);
+    }
+
+
+    @Test
+    void shouldMapAircraftToResponse() {
+        AircraftType aircraftType =
+                createAircraftType(
+                        5L,
+                        "AIRBUS",
+                        "Airbus A320",
+                        "A320"
+                );
+
+        Aircraft aircraft =
+                createAircraft(
+                        1L,
+                        aircraftType,
+                        "OE-LBA"
+                );
+
+        when(repository.findAll())
+                .thenReturn(List.of(aircraft));
+
+        List<AircraftResponse> result =
+                service.getAll();
+
+        AircraftResponse response =
+                result.getFirst();
+
+        assertThat(response.getId())
+                .isEqualTo(1L);
+
+        assertThat(response.getRegistration())
+                .isEqualTo("OE-LBA");
+
+        assertThat(response.getAircraftTypeId())
+                .isEqualTo(5L);
+
+        assertThat(response.getStatus())
+                .isEqualTo(AircraftStatus.IN_SERVICE);
+    }
+
+
+    @Test
+    void shouldReturnEmptyListWhenNoAircraftExist() {
+        when(repository.findAll())
+                .thenReturn(List.of());
+
+        List<AircraftResponse> result =
+                service.getAll();
+
+        assertThat(result).isEmpty();
+    }
+
+
+    @Test
+    void shouldMapMultipleAircraftRegistrations() {
+        AircraftType aircraftType =
+                createAircraftType(
+                        5L,
+                        "AIRBUS",
+                        "Airbus A320",
+                        "A320"
+                );
+
+        Aircraft first =
+                createAircraft(
+                        1L,
+                        aircraftType,
+                        "OE-LBA"
+                );
+
+        Aircraft second =
+                createAircraft(
+                        2L,
+                        aircraftType,
+                        "OE-LBB"
+                );
+
+        when(repository.findAll())
+                .thenReturn(List.of(first, second));
+
+        List<AircraftResponse> result =
+                service.getAll();
+
+        assertThat(result)
+                .extracting(AircraftResponse::getRegistration)
+                .containsExactly("OE-LBA", "OE-LBB");
+    }
+
+
+    @Test
+    void shouldReturnDetailedAircraft() {
+        AircraftType aircraftType =
+                createAircraftType(
+                        5L,
+                        "AIRBUS",
+                        "Airbus A320",
+                        "A320"
+                );
+
+        Aircraft aircraft =
+                createAircraft(
+                        1L,
+                        aircraftType,
+                        "OE-LBA"
+                );
+
+        when(repository.findById(1L))
+                .thenReturn(Optional.of(aircraft));
+
+        AircraftDetailsResponse result =
+                service.getAircraftById(1L);
+
+        assertThat(result.getId())
+                .isEqualTo(1L);
+
+        assertThat(result.getRegistration())
+                .isEqualTo("OE-LBA");
+
+        assertThat(result.getStatus())
+                .isEqualTo(AircraftStatus.IN_SERVICE);
+
+        assertThat(result.getAircraftTypeId())
+                .isEqualTo(5L);
+
+        assertThat(result.getManufacturer())
+                .isEqualTo("AIRBUS");
+
+        assertThat(result.getAircraftTypeModel())
+                .isEqualTo("Airbus A320");
+
+        assertThat(result.getIcaoCode())
+                .isEqualTo("A320");
+    }
+
+
+    @Test
+    void shouldThrowExceptionWhenAircraftDoesNotExist() {
+        when(repository.findById(999L))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                service.getAircraftById(999L)
+        ).isInstanceOf(NoSuchElementException.class);
+    }
+
+
+    private AircraftType createAircraftType(
+            Long id,
+            String manufacturer,
+            String model,
+            String icaoCode
+    ) {
+        AircraftType aircraftType =
+                new AircraftType(
+                        manufacturer,
+                        model,
+                        icaoCode
+                );
+
+        ReflectionTestUtils.setField(
+                aircraftType,
+                "id",
+                id
+        );
+
+        return aircraftType;
+    }
+
+
+    private Aircraft createAircraft(
+            Long id,
+            AircraftType aircraftType,
+            String registration
+    ) {
+        Aircraft aircraft =
+                new Aircraft(
+                        aircraftType,
+                        registration
+                );
+
+        ReflectionTestUtils.setField(
+                aircraft,
+                "id",
+                id
+        );
+
+        return aircraft;
     }
 }
