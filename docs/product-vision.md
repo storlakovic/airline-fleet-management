@@ -14,7 +14,7 @@ Rather than focusing only on implementing features, the project should document 
 
 The project should:
 
-* represent airlines, aircraft, aircraft types, airports, routes, and flights;
+* represent, aircraft, aircraft types, airports, routes, and flights;
 * simulate the operational state of an airline over time;
 * allow aircraft to be assigned to scheduled flights;
 * detect invalid or conflicting operational situations;
@@ -26,11 +26,10 @@ The project should:
 
 ## Initial Scope
 
-The first version should focus on the core airline operation domain.
+The first version should focus on the core e operation domain.
 
 The initial system should include:
 
-* airlines
 * aircraft
 * aircraft types
 * airports
