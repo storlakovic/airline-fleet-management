@@ -27,8 +27,8 @@ public class AircraftController {
         return aircraftService.getAll();
     }
 
-    @GetMapping("detailed-overview")
-    public AircraftDetailsResponse getDetailedOverview(@RequestParam Long aircraftTypeId) {
+    @GetMapping("/{id}")
+    public AircraftDetailsResponse getAircraftById(@RequestParam Long aircraftTypeId) {
         return aircraftService.getAircraftById(aircraftTypeId);
     }
 }
