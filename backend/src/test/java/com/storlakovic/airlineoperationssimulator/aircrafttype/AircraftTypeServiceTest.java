@@ -4,6 +4,7 @@ import com.storlakovic.airlineoperationssimulator.aircrafttype.dto.AircraftTypeR
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -23,6 +24,7 @@ class AircraftTypeServiceTest {
     private final AircraftTypeService service =
             new AircraftTypeService(repository);
 
+
     @Test
     void shouldReadAircraftTypes() throws IOException {
         Resource resource = csv("""
@@ -37,6 +39,7 @@ class AircraftTypeServiceTest {
         assertThat(result).hasSize(2);
     }
 
+
     @Test
     void shouldMapAircraftTypeCorrectly() throws IOException {
         Resource resource = csv("""
@@ -47,10 +50,16 @@ class AircraftTypeServiceTest {
         AircraftType result =
                 service.readAircraftTypes(resource).getFirst();
 
-        assertThat(result.getIcaoCode()).isEqualTo("A320");
-        assertThat(result.getManufacturer()).isEqualTo("AIRBUS");
-        assertThat(result.getModel()).isEqualTo("Airbus A320");
+        assertThat(result.getIcaoCode())
+                .isEqualTo("A320");
+
+        assertThat(result.getManufacturer())
+                .isEqualTo("AIRBUS");
+
+        assertThat(result.getModel())
+                .isEqualTo("Airbus A320");
     }
+
 
     @Test
     void shouldReturnEmptyListWhenOnlyHeaderExists() throws IOException {
@@ -63,6 +72,7 @@ class AircraftTypeServiceTest {
 
         assertThat(result).isEmpty();
     }
+
 
     @Test
     void shouldNotImportHeaderAsAircraftType() throws IOException {
@@ -79,6 +89,7 @@ class AircraftTypeServiceTest {
                 .doesNotContain("ICAO_Code");
     }
 
+
     @Test
     void shouldHandleQuotedComma() throws IOException {
         Resource resource = csv("""
@@ -93,6 +104,7 @@ class AircraftTypeServiceTest {
                 .isEqualTo("Boeing 737, Series 800");
     }
 
+
     @Test
     void shouldIgnoreUnusedColumns() throws IOException {
         Resource resource = csv("""
@@ -103,10 +115,16 @@ class AircraftTypeServiceTest {
         AircraftType result =
                 service.readAircraftTypes(resource).getFirst();
 
-        assertThat(result.getIcaoCode()).isEqualTo("A20N");
-        assertThat(result.getManufacturer()).isEqualTo("AIRBUS");
-        assertThat(result.getModel()).isEqualTo("Airbus A320 Neo");
+        assertThat(result.getIcaoCode())
+                .isEqualTo("A20N");
+
+        assertThat(result.getManufacturer())
+                .isEqualTo("AIRBUS");
+
+        assertThat(result.getModel())
+                .isEqualTo("Airbus A320 Neo");
     }
+
 
     @Test
     void shouldAllowMissingHeaderNames() throws IOException {
@@ -119,9 +137,11 @@ class AircraftTypeServiceTest {
                 service.readAircraftTypes(resource);
 
         assertThat(result).hasSize(1);
+
         assertThat(result.getFirst().getIcaoCode())
                 .isEqualTo("A21N");
     }
+
 
     @Test
     void shouldThrowExceptionWhenIcaoColumnIsMissing() {
@@ -135,6 +155,7 @@ class AircraftTypeServiceTest {
         ).isInstanceOf(IllegalArgumentException.class);
     }
 
+
     @Test
     void shouldThrowExceptionWhenManufacturerColumnIsMissing() {
         Resource resource = csv("""
@@ -146,6 +167,7 @@ class AircraftTypeServiceTest {
                 service.readAircraftTypes(resource)
         ).isInstanceOf(IllegalArgumentException.class);
     }
+
 
     @Test
     void shouldThrowExceptionWhenModelColumnIsMissing() {
@@ -159,16 +181,18 @@ class AircraftTypeServiceTest {
         ).isInstanceOf(IllegalArgumentException.class);
     }
 
+
     @Test
     void shouldIgnoreDuplicateAircraftTypes() throws IOException {
         Resource resource = csv("""
-            ICAO_Code,Manufacturer,Model_BADA
-            A320,AIRBUS,Airbus A320
-            B738,BOEING,Boeing 737-800
-            """);
+                ICAO_Code,Manufacturer,Model_BADA
+                A320,AIRBUS,Airbus A320
+                B738,BOEING,Boeing 737-800
+                """);
 
         AircraftType existingAircraftType =
-                new AircraftType(
+                createAircraftType(
+                        1L,
                         "AIRBUS",
                         "Airbus A320",
                         "A320"
@@ -192,66 +216,132 @@ class AircraftTypeServiceTest {
                 .isEqualTo("B738");
     }
 
+
     @Test
     void shouldReturnAllAircraftTypes() {
         AircraftType a320 =
-                new AircraftType("AIRBUS", "Airbus A320", "A320");
+                createAircraftType(
+                        1L,
+                        "AIRBUS",
+                        "Airbus A320",
+                        "A320"
+                );
 
         AircraftType b738 =
-                new AircraftType("BOEING", "Boeing 737-800", "B738");
+                createAircraftType(
+                        2L,
+                        "BOEING",
+                        "Boeing 737-800",
+                        "B738"
+                );
 
         when(repository.findAll())
                 .thenReturn(List.of(a320, b738));
 
-        List<AircraftTypeResponse> result = service.getAll();
+        List<AircraftTypeResponse> result =
+                service.getAll();
 
         assertThat(result).hasSize(2);
     }
 
+
     @Test
     void shouldMapAircraftTypeToResponse() {
         AircraftType aircraftType =
-                new AircraftType("AIRBUS", "Airbus A320", "A320");
+                createAircraftType(
+                        5L,
+                        "AIRBUS",
+                        "Airbus A320",
+                        "A320"
+                );
 
         when(repository.findAll())
                 .thenReturn(List.of(aircraftType));
 
-        List<AircraftTypeResponse> result = service.getAll();
+        List<AircraftTypeResponse> result =
+                service.getAll();
 
-        AircraftTypeResponse response = result.getFirst();
+        AircraftTypeResponse response =
+                result.getFirst();
 
-        assertThat(response.getManufacturer()).isEqualTo("AIRBUS");
-        assertThat(response.getModel()).isEqualTo("Airbus A320");
-        assertThat(response.getIcaoCode()).isEqualTo("A320");
+        assertThat(response.getId())
+                .isEqualTo(5L);
+
+        assertThat(response.getManufacturer())
+                .isEqualTo("AIRBUS");
+
+        assertThat(response.getModel())
+                .isEqualTo("Airbus A320");
+
+        assertThat(response.getIcaoCode())
+                .isEqualTo("A320");
     }
+
 
     @Test
     void shouldReturnEmptyListWhenNoAircraftTypesExist() {
         when(repository.findAll())
                 .thenReturn(List.of());
 
-        List<AircraftTypeResponse> result = service.getAll();
+        List<AircraftTypeResponse> result =
+                service.getAll();
 
         assertThat(result).isEmpty();
     }
 
+
     @Test
     void shouldMapMultipleAircraftTypes() {
         AircraftType a320 =
-                new AircraftType("AIRBUS", "Airbus A320", "A320");
+                createAircraftType(
+                        1L,
+                        "AIRBUS",
+                        "Airbus A320",
+                        "A320"
+                );
 
         AircraftType b738 =
-                new AircraftType("BOEING", "Boeing 737-800", "B738");
+                createAircraftType(
+                        2L,
+                        "BOEING",
+                        "Boeing 737-800",
+                        "B738"
+                );
 
         when(repository.findAll())
                 .thenReturn(List.of(a320, b738));
 
-        List<AircraftTypeResponse> result = service.getAll();
+        List<AircraftTypeResponse> result =
+                service.getAll();
 
         assertThat(result)
                 .extracting(AircraftTypeResponse::getIcaoCode)
                 .containsExactly("A320", "B738");
     }
+
+
+    private AircraftType createAircraftType(
+            Long id,
+            String manufacturer,
+            String model,
+            String icaoCode
+    ) {
+        AircraftType aircraftType =
+                new AircraftType(
+                        manufacturer,
+                        model,
+                        icaoCode
+                );
+
+        ReflectionTestUtils.setField(
+                aircraftType,
+                "id",
+                id
+        );
+
+        return aircraftType;
+    }
+
 
     private Resource csv(String content) {
         return new ByteArrayResource(
