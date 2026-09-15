@@ -6,6 +6,7 @@ import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftResponse;
 import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftType;
 import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftTypeRepository;
 import com.storlakovic.airlineoperationssimulator.common.AircraftAlreadyExistsException;
+import com.storlakovic.airlineoperationssimulator.common.AircraftNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -314,7 +315,7 @@ class AircraftServiceTest {
 
         assertThatThrownBy(() ->
                 service.getAircraftById(999L)
-        ).isInstanceOf(NoSuchElementException.class);
+        ).isInstanceOf(AircraftNotFoundException.class);
     }
 
 
