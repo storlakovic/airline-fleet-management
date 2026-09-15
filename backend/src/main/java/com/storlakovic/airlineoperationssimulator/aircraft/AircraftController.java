@@ -1,10 +1,11 @@
 package com.storlakovic.airlineoperationssimulator.aircraft;
 
 import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftCreateRequest;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftDetailsResponse;
+import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftResponse;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/aircraft")
@@ -16,8 +17,18 @@ public class AircraftController {
         this.aircraftService = aircraftService;
     }
 
-    @PostMapping
-    public Aircraft registerAircraft(@RequestBody AircraftCreateRequest request) {
+    @PostMapping("register")
+    public AircraftResponse registerAircraft(@RequestBody AircraftCreateRequest request) {
         return aircraftService.addAircraftToFleet(request);
+    }
+
+    @GetMapping
+    public List<AircraftResponse> getAircraftOverview() {
+        return aircraftService.getAll();
+    }
+
+    @GetMapping("detailed-overview")
+    public AircraftDetailsResponse getDetailedOverview(@RequestParam Long aircraftTypeId) {
+        return aircraftService.getAircraftById(aircraftTypeId);
     }
 }
