@@ -35,7 +35,7 @@ public class AircraftController {
     }
 
     @GetMapping("/{id}")
-    public AircraftDetailsResponse getAircraftById(@RequestParam Long aircraftTypeId) {
-        return aircraftService.getAircraftById(aircraftTypeId);
+    public AircraftDetailsResponse getAircraftById(@RequestParam Long id) {
+        return aircraftService.getAircraftById(id);
     }
 }

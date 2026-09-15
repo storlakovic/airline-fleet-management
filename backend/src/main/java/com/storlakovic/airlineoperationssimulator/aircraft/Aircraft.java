@@ -3,7 +3,7 @@ package com.storlakovic.airlineoperationssimulator.aircraft;
 
 import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftType;
 import jakarta.persistence.*;
-import com.storlakovic.airlineoperationssimulator.common.IllegalStateException;
+import com.storlakovic.airlineoperationssimulator.common.AircraftStatusTransitionException;
 import jakarta.validation.constraints.NotBlank;
 
 @Entity
@@ -49,7 +49,7 @@ public class Aircraft {
 
     public void changeStatus(AircraftStatus status) {
         if (this.status == AircraftStatus.RETIRED) {
-            throw new IllegalStateException("Retired aircraft cannot change status");
+            throw new AircraftStatusTransitionException("Retired aircraft cannot change status");
         }
         this.status = status;
     }

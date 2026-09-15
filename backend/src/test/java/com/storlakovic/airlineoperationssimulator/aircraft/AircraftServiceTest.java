@@ -8,7 +8,7 @@ import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftType;
 import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftTypeRepository;
 import com.storlakovic.airlineoperationssimulator.common.AircraftAlreadyExistsException;
 import com.storlakovic.airlineoperationssimulator.common.AircraftNotFoundException;
-import com.storlakovic.airlineoperationssimulator.common.IllegalStateException;
+import com.storlakovic.airlineoperationssimulator.common.AircraftStatusTransitionException;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -403,7 +403,7 @@ class AircraftServiceTest {
                         10L,
                         new  AircraftUpdateRequest(AircraftStatus.RETIRED)
                 )
-        ).isInstanceOf(IllegalStateException.class);
+        ).isInstanceOf(AircraftStatusTransitionException.class);
 
         verify(repository, never())
                 .save(any(Aircraft.class));
