@@ -6,6 +6,7 @@ import com.storlakovic.airlineoperationssimulator.common.AirportNotFoundExceptio
 import com.storlakovic.airlineoperationssimulator.common.RouteAlreadyExistsException;
 import com.storlakovic.airlineoperationssimulator.common.RouteInvalidException;
 import com.storlakovic.airlineoperationssimulator.route.dto.RouteCreateRequest;
+import com.storlakovic.airlineoperationssimulator.route.dto.RouteResponse;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -19,7 +20,7 @@ public class RouteService {
         this.airportRepository = airportRepository;
     }
 
-    public Route addRoute(RouteCreateRequest request) {
+    public RouteResponse addRoute(RouteCreateRequest request) {
         if (request.getDestinationAirportId().equals(request.getOriginAirportId())) {
             throw new RouteInvalidException("Origin and destination must not be the same");
         }
@@ -27,9 +28,10 @@ public class RouteService {
         Airport destination = airportRepository.findById(request.getDestinationAirportId()).orElseThrow(() -> new AirportNotFoundException("Could not find airport with id: " + request.getDestinationAirportId()));
 
         if(routeRepository.existsByOrigin_IdAndDestination_Id(request.getOriginAirportId(), request.getDestinationAirportId())) {
-            throw new RouteAlreadyExistsException("Origin and destination must not be the same");
+            throw new RouteAlreadyExistsException("Route already exists");
         }
+        Route newRoute = routeRepository.save(new Route(origin,destination));
 
-        return routeRepository.save(new Route(origin,destination));
+        return new RouteResponse(newRoute.getId(), newRoute.getOrigin().getId(), newRoute.getOrigin().getIcaoCode(), newRoute.getDestination().getId(), newRoute.getDestination().getIcaoCode());
     }
 }

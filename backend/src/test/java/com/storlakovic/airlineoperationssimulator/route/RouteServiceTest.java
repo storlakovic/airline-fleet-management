@@ -7,6 +7,7 @@ import com.storlakovic.airlineoperationssimulator.common.AirportNotFoundExceptio
 import com.storlakovic.airlineoperationssimulator.common.RouteAlreadyExistsException;
 import com.storlakovic.airlineoperationssimulator.common.RouteInvalidException;
 import com.storlakovic.airlineoperationssimulator.route.dto.RouteCreateRequest;
+import com.storlakovic.airlineoperationssimulator.route.dto.RouteResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -41,15 +42,15 @@ class RouteServiceTest {
         when(routeRepository.save(any(Route.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        Route result = service.addRoute(
+        RouteResponse result = service.addRoute(
                 new RouteCreateRequest(1L, 2L)
         );
 
-        assertThat(result.getOrigin())
-                .isSameAs(origin);
+        assertThat(result.originIcaoCode())
+                .isSameAs(origin.getIcaoCode());
 
-        assertThat(result.getDestination())
-                .isSameAs(destination);
+        assertThat(result.destinationIcaoCode())
+                .isSameAs(destination.getIcaoCode());
 
         verify(routeRepository)
                 .save(any(Route.class));
@@ -146,15 +147,15 @@ class RouteServiceTest {
         when(routeRepository.save(any(Route.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        Route result = service.addRoute(
+        RouteResponse result = service.addRoute(
                 new RouteCreateRequest(1L, 2L)
         );
 
-        assertThat(result.getOrigin())
-                .isSameAs(jfk);
+        assertThat(result.originIcaoCode())
+                .isSameAs(jfk.getIcaoCode());
 
-        assertThat(result.getDestination())
-                .isSameAs(vienna);
+        assertThat(result.destinationIcaoCode())
+                .isSameAs(vienna.getIcaoCode());
 
         verify(routeRepository)
                 .save(any(Route.class));
