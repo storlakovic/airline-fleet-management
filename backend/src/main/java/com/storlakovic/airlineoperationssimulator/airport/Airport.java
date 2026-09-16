@@ -49,6 +49,19 @@ public class Airport {
         this.status = status;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Airport)) return false;
+        Airport airport = (Airport) o;
+        return icaoCode != null && icaoCode.equals(airport.icaoCode);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
+
     public Airport() {}
 
     public String getIcaoCode() {
