@@ -1,5 +1,6 @@
 package com.storlakovic.airlineoperationssimulator.airport;
 
+import com.storlakovic.airlineoperationssimulator.airport.dto.AirportDetailsResponse;
 import com.storlakovic.airlineoperationssimulator.airport.dto.AirportResponse;
 import com.storlakovic.airlineoperationssimulator.airport.dto.AirportUpdateRequest;
 import com.storlakovic.airlineoperationssimulator.common.AirportImportException;
@@ -100,6 +101,11 @@ public class AirportService {
 
         Airport newAirport = repository.save(airport);
 
-        return new AirportResponse(newAirport.getId(), newAirport.getIcaoCode(), newAirport.getIataCode(), newAirport.getType(), newAirport.getStatus());
+        return new AirportResponse(newAirport.getId(), newAirport.getIcaoCode(), newAirport.getIataCode(), newAirport.getName(), newAirport.getType(), newAirport.getStatus());
+    }
+
+    public AirportDetailsResponse getAirport(Long id) {
+        Airport airport = repository.findById(id).orElseThrow(() -> new AirportNotFoundException("Airport with id: " + id + " does not exist"));
+        return new AirportDetailsResponse(airport.getId(), airport.getIcaoCode(), airport.getIataCode(), airport.getName(), airport.getCity(), airport.getCountryCode(), airport.getLatitude(), airport.getLongitude(), airport.getType(), airport.getStatus());
     }
 }

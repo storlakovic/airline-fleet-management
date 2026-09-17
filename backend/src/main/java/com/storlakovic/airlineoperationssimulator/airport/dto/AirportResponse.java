@@ -6,6 +6,7 @@ public record AirportResponse (
      Long id,
      String icaoCode,
      String iataCode,
+     String name,
      String type,
      AirportStatus status
 ){}
