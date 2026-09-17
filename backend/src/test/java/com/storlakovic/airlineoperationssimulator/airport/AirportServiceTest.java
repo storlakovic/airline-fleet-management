@@ -1,11 +1,15 @@
 package com.storlakovic.airlineoperationssimulator.airport;
 
+import com.storlakovic.airlineoperationssimulator.airport.dto.AirportResponse;
+import com.storlakovic.airlineoperationssimulator.airport.dto.AirportUpdateRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -164,6 +168,55 @@ class AirportServiceTest {
 
         verify(repository)
                 .saveAll(List.of(vienna, linz));
+    }
+
+    @Test
+    void shouldUpdateAirportStatus() {
+        Airport airport = new Airport(
+                "LOWW",
+                "VIE",
+                "Vienna International Airport",
+                "Vienna",
+                "AT",
+                48.1103,
+                16.5697,
+                "large_airport",
+                AirportStatus.OPERATIONAL
+        );
+
+        ReflectionTestUtils.setField(airport, "id", 1L);
+
+        AirportUpdateRequest request =
+                new AirportUpdateRequest(AirportStatus.CLOSED);
+
+        when(repository.findById(1L))
+                .thenReturn(Optional.of(airport));
+
+        when(repository.save(airport))
+                .thenReturn(airport);
+
+        AirportResponse result =
+                service.updateAirport(1L, request);
+
+        assertThat(airport.getStatus())
+                .isEqualTo(AirportStatus.CLOSED);
+
+        assertThat(result.id())
+                .isEqualTo(1L);
+
+        assertThat(result.icaoCode())
+                .isEqualTo("LOWW");
+
+        assertThat(result.iataCode())
+                .isEqualTo("VIE");
+
+        assertThat(result.type())
+                .isEqualTo("large_airport");
+
+        assertThat(result.status())
+                .isEqualTo(AirportStatus.CLOSED);
+
+        verify(repository).save(airport);
     }
 
 
