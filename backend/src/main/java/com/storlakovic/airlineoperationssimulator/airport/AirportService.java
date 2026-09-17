@@ -1,6 +1,9 @@
 package com.storlakovic.airlineoperationssimulator.airport;
 
+import com.storlakovic.airlineoperationssimulator.airport.dto.AirportResponse;
+import com.storlakovic.airlineoperationssimulator.airport.dto.AirportUpdateRequest;
 import com.storlakovic.airlineoperationssimulator.common.AirportImportException;
+import com.storlakovic.airlineoperationssimulator.common.AirportNotFoundException;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 import org.springframework.core.io.ClassPathResource;
@@ -88,5 +91,15 @@ public class AirportService {
                 .filter(a -> !repository.existsByIcaoCode(a.getIcaoCode()))
                 .toList();
         return repository.saveAll(newAirports);
+    }
+
+    public AirportResponse updateAirport(Long id, AirportUpdateRequest request) {
+        Airport airport = repository.findById(id).orElseThrow(() -> new AirportNotFoundException("Airport with id: " + id + " does not exist"));
+
+        airport.setStatus(request.getStatus());
+
+        Airport newAirport = repository.save(airport);
+
+        return new AirportResponse(newAirport.getId(), newAirport.getIcaoCode(), newAirport.getIataCode(), newAirport.getType(), newAirport.getStatus());
     }
 }

@@ -104,4 +104,8 @@ public class Airport {
         return id;
     }
 
+
+    public void setStatus(AirportStatus status) {
+        this.status = status;
+    }
 }
