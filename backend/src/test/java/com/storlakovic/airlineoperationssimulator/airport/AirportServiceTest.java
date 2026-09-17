@@ -1,7 +1,9 @@
 package com.storlakovic.airlineoperationssimulator.airport;
 
+import com.storlakovic.airlineoperationssimulator.airport.dto.AirportDetailsResponse;
 import com.storlakovic.airlineoperationssimulator.airport.dto.AirportResponse;
 import com.storlakovic.airlineoperationssimulator.airport.dto.AirportUpdateRequest;
+import com.storlakovic.airlineoperationssimulator.common.AirportNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -12,6 +14,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.*;
 
@@ -134,40 +137,17 @@ class AirportServiceTest {
 
     @Test
     void shouldSaveNewAirports() {
-        Airport vienna =
-                createAirport(
-                        "LOWW",
-                        "VIE",
-                        "Vienna International Airport",
-                        "Vienna"
-                );
+        Airport vienna = createAirport("LOWW", "VIE", "Vienna International Airport", "Vienna");
+        Airport linz = createAirport("LOWL", "LNZ", "Linz Airport", "Linz");
 
-        Airport linz =
-                createAirport(
-                        "LOWL",
-                        "LNZ",
-                        "Linz Airport",
-                        "Linz"
-                );
+        when(repository.existsByIcaoCode("LOWW")).thenReturn(false);
+        when(repository.existsByIcaoCode("LOWL")).thenReturn(false);
+        when(repository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        when(repository.findAll())
-                .thenReturn(List.of());
+        List<Airport> result = service.saveNewAirports(List.of(vienna, linz));
 
-        when(repository.saveAll(anyList()))
-                .thenAnswer(invocation ->
-                        invocation.getArgument(0)
-                );
-
-        List<Airport> result =
-                service.saveNewAirports(
-                        List.of(vienna, linz)
-                );
-
-        assertThat(result)
-                .hasSize(2);
-
-        verify(repository)
-                .saveAll(List.of(vienna, linz));
+        assertThat(result).hasSize(2);
+        verify(repository).saveAll(List.of(vienna, linz));
     }
 
     @Test
@@ -217,6 +197,86 @@ class AirportServiceTest {
                 .isEqualTo(AirportStatus.CLOSED);
 
         verify(repository).save(airport);
+    }
+
+    @Test
+    void shouldThrowWhenUpdatingNonExistingAirport() {
+        AirportUpdateRequest request =
+                new AirportUpdateRequest(AirportStatus.CLOSED);
+
+        when(repository.findById(99L))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                service.updateAirport(99L, request)
+        )
+                .isInstanceOf(AirportNotFoundException.class)
+                .hasMessage("Airport with id: 99 does not exist");
+
+        verify(repository, never())
+                .save(any(Airport.class));
+    }
+
+    @Test
+    void shouldReturnAirportDetails() {
+        Airport airport = new Airport(
+                "LOWW",
+                "VIE",
+                "Vienna International Airport",
+                "Vienna",
+                "AT",
+                48.1103,
+                16.5697,
+                "large_airport",
+                AirportStatus.OPERATIONAL
+        );
+
+        ReflectionTestUtils.setField(airport, "id", 1L);
+
+        when(repository.findById(1L))
+                .thenReturn(Optional.of(airport));
+
+        AirportDetailsResponse result =
+                service.getAirport(1L);
+
+        assertThat(result.id())
+                .isEqualTo(1L);
+
+        assertThat(result.icaoCode())
+                .isEqualTo("LOWW");
+
+        assertThat(result.iataCode())
+                .isEqualTo("VIE");
+
+        assertThat(result.name())
+                .isEqualTo("Vienna International Airport");
+
+        assertThat(result.city())
+                .isEqualTo("Vienna");
+
+        assertThat(result.countryCode())
+                .isEqualTo("AT");
+
+        assertThat(result.latitude())
+                .isEqualTo(48.1103);
+
+        assertThat(result.longitude())
+                .isEqualTo(16.5697);
+
+        assertThat(result.status())
+                .isEqualTo(AirportStatus.OPERATIONAL);
+    }
+
+    @Test
+    void shouldThrowWhenAirportDetailsDoNotExist() {
+        when(repository.findById(99L))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                service.getAirport(99L)
+        )
+                .isInstanceOf(AirportNotFoundException.class)
+                .hasMessage("Airport with id: 99 does not exist");
     }
 
 
