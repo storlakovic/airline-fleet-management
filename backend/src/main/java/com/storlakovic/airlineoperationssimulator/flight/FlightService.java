@@ -2,8 +2,10 @@ package com.storlakovic.airlineoperationssimulator.flight;
 
 import com.storlakovic.airlineoperationssimulator.common.RouteNotFoundException;
 import com.storlakovic.airlineoperationssimulator.flight.dto.CreateFlightRequest;
+import com.storlakovic.airlineoperationssimulator.flight.dto.FlightResponse;
 import com.storlakovic.airlineoperationssimulator.route.Route;
 import com.storlakovic.airlineoperationssimulator.route.RouteRepository;
+import com.storlakovic.airlineoperationssimulator.route.dto.RouteResponse;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -16,9 +18,32 @@ public class FlightService {
         this.routeRepository = routeRepository;
     }
 
-    public CreateFlightRequest createFlightRequest(CreateFlightRequest createFlightRequest) {
-        Route route = routeRepository.findById(createFlightRequest.routeId()).orElseThrow(() -> new RouteNotFoundException("Route with id: " + createFlightRequest.routeId() + " does not exist."));
-        Flight savedFlight = repository.save(new Flight(createFlightRequest.flightNumber(), route, createFlightRequest.scheduledDepartureTime(), createFlightRequest.scheduledArrivalTime()));
-        return new CreateFlightRequest(savedFlight.getFlightNumber(), savedFlight.getRoute().getId(), savedFlight.getScheduledDepartureTime(), savedFlight.getScheduledArrivalTime());
+    public FlightResponse createFlight(CreateFlightRequest request) {
+        Route route = routeRepository.findById(request.routeId())
+                .orElseThrow(() -> new RouteNotFoundException(
+                        "Route with id: " + request.routeId() + " does not exist."
+                ));
+
+        Flight savedFlight = repository.save(new Flight(
+                request.flightNumber(),
+                route,
+                request.scheduledDepartureTime(),
+                request.scheduledArrivalTime()
+        ));
+
+        return new FlightResponse(
+                savedFlight.getId(),
+                savedFlight.getFlightNumber(),
+                new RouteResponse(
+                        route.getId(),
+                        route.getOrigin().getId(),
+                        route.getOrigin().getIcaoCode(),
+                        route.getDestination().getId(),
+                        route.getDestination().getIcaoCode()
+                ),
+                savedFlight.getScheduledDepartureTime(),
+                savedFlight.getScheduledArrivalTime(),
+                savedFlight.getStatus()
+        );
     }
 }
