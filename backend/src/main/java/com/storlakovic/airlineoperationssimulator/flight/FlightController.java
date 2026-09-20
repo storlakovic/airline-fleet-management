@@ -37,4 +37,9 @@ public class FlightController {
     public FlightResponse updateFlight(@RequestBody FlightUpdateRequest flightUpdateRequest, @RequestParam Long id) {
         return flightService.updateFlight(flightUpdateRequest, id);
     }
+
+    @PutMapping("/cancel/{id}")
+    public FlightResponse cancelFlight(@RequestParam Long id) {
+        return flightService.cancelFlight(id);
+    }
 }

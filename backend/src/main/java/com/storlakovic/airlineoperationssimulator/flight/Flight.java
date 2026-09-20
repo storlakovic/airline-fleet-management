@@ -93,4 +93,8 @@ public class Flight {
     public void setScheduledArrivalTime(OffsetDateTime scheduledArrivalTime) {
         this.scheduledArrivalTime = scheduledArrivalTime;
     }
+
+    public void setStatus(FlightStatus status) {
+        this.status = status;
+    }
 }

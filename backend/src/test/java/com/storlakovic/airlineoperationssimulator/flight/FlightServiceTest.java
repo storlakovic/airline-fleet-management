@@ -2,6 +2,7 @@ package com.storlakovic.airlineoperationssimulator.flight;
 
 import com.storlakovic.airlineoperationssimulator.airport.Airport;
 import com.storlakovic.airlineoperationssimulator.airport.AirportStatus;
+import com.storlakovic.airlineoperationssimulator.common.FlightCancellationNotAllowedException;
 import com.storlakovic.airlineoperationssimulator.common.FlightNotFoundException;
 import com.storlakovic.airlineoperationssimulator.common.InvalidFlightTimeException;
 import com.storlakovic.airlineoperationssimulator.common.RouteNotFoundException;
@@ -412,6 +413,110 @@ class FlightServiceTest {
                 .hasMessage("Flight with id: 99 not found");
 
         verify(repository, never()).save(any());
+    }
+
+    @Test
+    void shouldCancelScheduledFlight() {
+        Route route = route(10L, airport(1L, "LOWW"), airport(2L, "KJFK"));
+        Flight flight = flightWithStatus(route, FlightStatus.SCHEDULED);
+        ReflectionTestUtils.setField(flight, "id", 1L);
+
+        when(repository.findById(1L)).thenReturn(Optional.of(flight));
+        when(repository.save(any(Flight.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        FlightResponse result = service.cancelFlight(1L);
+
+        assertThat(result.status()).isEqualTo(FlightStatus.CANCELLED);
+        verify(repository).save(flight);
+    }
+
+
+    @Test
+    void shouldCancelDelayedFlight() {
+        Route route = route(10L, airport(1L, "LOWW"), airport(2L, "KJFK"));
+        Flight flight = flightWithStatus(route, FlightStatus.DELAYED);
+        ReflectionTestUtils.setField(flight, "id", 1L);
+
+        when(repository.findById(1L)).thenReturn(Optional.of(flight));
+        when(repository.save(any(Flight.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        FlightResponse result = service.cancelFlight(1L);
+
+        assertThat(result.status()).isEqualTo(FlightStatus.CANCELLED);
+    }
+
+
+    @Test
+    void shouldCancelUnknownStatusFlight() {
+        Route route = route(10L, airport(1L, "LOWW"), airport(2L, "KJFK"));
+        Flight flight = flightWithStatus(route, FlightStatus.UNKNOWN);
+        ReflectionTestUtils.setField(flight, "id", 1L);
+
+        when(repository.findById(1L)).thenReturn(Optional.of(flight));
+        when(repository.save(any(Flight.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        FlightResponse result = service.cancelFlight(1L);
+
+        assertThat(result.status()).isEqualTo(FlightStatus.CANCELLED);
+    }
+
+
+    @Test
+    void shouldThrowWhenFlightAlreadyCancelled() {
+        Route route = route(10L, airport(1L, "LOWW"), airport(2L, "KJFK"));
+        Flight flight = flightWithStatus(route, FlightStatus.CANCELLED);
+        ReflectionTestUtils.setField(flight, "id", 1L);
+
+        when(repository.findById(1L)).thenReturn(Optional.of(flight));
+
+        assertThatThrownBy(() ->
+                service.cancelFlight(1L)
+        )
+                .isInstanceOf(FlightCancellationNotAllowedException.class);
+
+        verify(repository, never()).save(any());
+    }
+
+
+    @Test
+    void shouldThrowWhenFlightAlreadyCompleted() {
+        Route route = route(10L, airport(1L, "LOWW"), airport(2L, "KJFK"));
+        Flight flight = flightWithStatus(route, FlightStatus.LANDED);
+        ReflectionTestUtils.setField(flight, "id", 1L);
+
+        when(repository.findById(1L)).thenReturn(Optional.of(flight));
+
+        assertThatThrownBy(() ->
+                service.cancelFlight(1L)
+        )
+                .isInstanceOf(FlightCancellationNotAllowedException.class);
+
+        verify(repository, never()).save(any());
+    }
+
+
+    @Test
+    void shouldThrowWhenFlightDoesNotExistOnFlightCancellation() {
+        when(repository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                service.cancelFlight(99L)
+        )
+                .isInstanceOf(FlightNotFoundException.class)
+                .hasMessage("Flight with id: 99 not found");
+
+        verify(repository, never()).save(any());
+    }
+
+
+    private Flight flightWithStatus(Route route, FlightStatus status) {
+        Flight flight = new Flight(
+                "OS123", route,
+                OffsetDateTime.of(2026, 9, 20, 10, 0, 0, 0, ZoneOffset.UTC),
+                OffsetDateTime.of(2026, 9, 20, 13, 0, 0, 0, ZoneOffset.UTC)
+        );
+        ReflectionTestUtils.setField(flight, "status", status);
+        return flight;
     }
 
     private Route route(Long id, Airport origin, Airport destination) {

@@ -1,5 +1,6 @@
 package com.storlakovic.airlineoperationssimulator.flight;
 
+import com.storlakovic.airlineoperationssimulator.common.FlightCancellationNotAllowedException;
 import com.storlakovic.airlineoperationssimulator.common.FlightNotFoundException;
 import com.storlakovic.airlineoperationssimulator.common.InvalidFlightTimeException;
 import com.storlakovic.airlineoperationssimulator.common.RouteNotFoundException;
@@ -118,6 +119,37 @@ public class FlightService {
 
         flight.setScheduledDepartureTime(newDeparture);
         flight.setScheduledArrivalTime(newArrival);
+        Flight updatedFlight = repository.save(flight);
+        return new FlightResponse(
+                updatedFlight.getId(),
+                updatedFlight.getFlightNumber(),
+                new RouteResponse(
+                        updatedFlight.getRoute().getId(),
+                        updatedFlight.getRoute().getOrigin().getId(),
+                        updatedFlight.getRoute().getOrigin().getIcaoCode(),
+                        updatedFlight.getRoute().getDestination().getId(),
+                        updatedFlight.getRoute().getDestination().getIcaoCode()
+                ),
+                updatedFlight.getRoute().getOrigin().getIcaoCode(),
+                updatedFlight.getRoute().getDestination().getIcaoCode(),
+                updatedFlight.getScheduledDepartureTime(),
+                updatedFlight.getScheduledArrivalTime(),
+                updatedFlight.getStatus()
+        );
+    }
+
+    public FlightResponse cancelFlight(Long id) {
+        Flight flight = repository.findById(id).orElseThrow(() -> new FlightNotFoundException("Flight with id: " + id + " not found"));
+        boolean cancellable = flight.getStatus() == FlightStatus.UNKNOWN
+                || flight.getStatus() == FlightStatus.SCHEDULED
+                || flight.getStatus() == FlightStatus.DELAYED;
+
+        if (!cancellable) {
+            throw new FlightCancellationNotAllowedException(
+                    "Flight with id: " + id + " cannot be cancelled from status " + flight.getStatus()
+            );
+        }
+        flight.setStatus(FlightStatus.CANCELLED);
         Flight updatedFlight = repository.save(flight);
         return new FlightResponse(
                 updatedFlight.getId(),
