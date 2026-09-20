@@ -1,6 +1,7 @@
 package com.storlakovic.airlineoperationssimulator.flight;
 
 import com.storlakovic.airlineoperationssimulator.common.FlightNotFoundException;
+import com.storlakovic.airlineoperationssimulator.common.InvalidFlightTimeException;
 import com.storlakovic.airlineoperationssimulator.common.RouteNotFoundException;
 import com.storlakovic.airlineoperationssimulator.flight.dto.CreateFlightRequest;
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightResponse;
@@ -20,6 +21,14 @@ public class FlightService {
     }
 
     public FlightResponse createFlight(CreateFlightRequest request) {
+
+        if (request.scheduledDepartureTime() != null && request.scheduledArrivalTime() != null
+                && !request.scheduledDepartureTime().isBefore(request.scheduledArrivalTime())) {
+            throw new InvalidFlightTimeException(
+                    "Departure time must be before arrival time"
+            );
+        }
+
         Route route = routeRepository.findById(request.routeId())
                 .orElseThrow(() -> new RouteNotFoundException(
                         "Route with id: " + request.routeId() + " does not exist."
