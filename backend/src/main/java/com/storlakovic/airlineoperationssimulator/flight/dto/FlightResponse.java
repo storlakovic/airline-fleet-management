@@ -9,6 +9,8 @@ public record FlightResponse(
         Long id,
         String flightNumber,
         RouteResponse route,
+        String originIcaoCode,
+        String destinationIcaoCode,
         OffsetDateTime scheduledDepartureTime,
         OffsetDateTime scheduledArrivalTime,
         FlightStatus status
