@@ -85,4 +85,12 @@ public class Flight {
     public Long getId() {
         return id;
     }
+
+    public void setScheduledDepartureTime(OffsetDateTime scheduledDepartureTime) {
+        this.scheduledDepartureTime = scheduledDepartureTime;
+    }
+
+    public void setScheduledArrivalTime(OffsetDateTime scheduledArrivalTime) {
+        this.scheduledArrivalTime = scheduledArrivalTime;
+    }
 }

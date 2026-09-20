@@ -3,14 +3,16 @@ package com.storlakovic.airlineoperationssimulator.flight;
 import com.storlakovic.airlineoperationssimulator.common.FlightNotFoundException;
 import com.storlakovic.airlineoperationssimulator.common.InvalidFlightTimeException;
 import com.storlakovic.airlineoperationssimulator.common.RouteNotFoundException;
-import com.storlakovic.airlineoperationssimulator.flight.dto.CreateFlightRequest;
+import com.storlakovic.airlineoperationssimulator.flight.dto.FlightCreateRequest;
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightDetailedResponse;
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightResponse;
+import com.storlakovic.airlineoperationssimulator.flight.dto.FlightUpdateRequest;
 import com.storlakovic.airlineoperationssimulator.route.Route;
 import com.storlakovic.airlineoperationssimulator.route.RouteRepository;
 import com.storlakovic.airlineoperationssimulator.route.dto.RouteResponse;
 import org.springframework.stereotype.Service;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Service
@@ -23,7 +25,7 @@ public class FlightService {
         this.routeRepository = routeRepository;
     }
 
-    public FlightResponse createFlight(CreateFlightRequest request) {
+    public FlightResponse createFlight(FlightCreateRequest request) {
 
         if (request.scheduledDepartureTime() != null && request.scheduledArrivalTime() != null
                 && !request.scheduledDepartureTime().isBefore(request.scheduledArrivalTime())) {
@@ -97,5 +99,41 @@ public class FlightService {
                 flight.getScheduledArrivalTime(),
                 flight.getStatus()
         )).toList();
+    }
+
+    public FlightResponse updateFlight(FlightUpdateRequest request, Long id) {
+        Flight flight = repository.findById(id).orElseThrow(() -> new FlightNotFoundException("Flight with id: " + id + " not found"));
+
+        OffsetDateTime newDeparture = request.scheduledDepartureTime() != null
+                ? request.scheduledDepartureTime()
+                : flight.getScheduledDepartureTime();
+
+        OffsetDateTime newArrival = request.scheduledArrivalTime() != null
+                ? request.scheduledArrivalTime()
+                : flight.getScheduledArrivalTime();
+
+        if (!newDeparture.isBefore(newArrival)) {
+            throw new InvalidFlightTimeException("Departure time must be before arrival time");
+        }
+
+        flight.setScheduledDepartureTime(newDeparture);
+        flight.setScheduledArrivalTime(newArrival);
+        Flight updatedFlight = repository.save(flight);
+        return new FlightResponse(
+                updatedFlight.getId(),
+                updatedFlight.getFlightNumber(),
+                new RouteResponse(
+                        updatedFlight.getRoute().getId(),
+                        updatedFlight.getRoute().getOrigin().getId(),
+                        updatedFlight.getRoute().getOrigin().getIcaoCode(),
+                        updatedFlight.getRoute().getDestination().getId(),
+                        updatedFlight.getRoute().getDestination().getIcaoCode()
+                ),
+                updatedFlight.getRoute().getOrigin().getIcaoCode(),
+                updatedFlight.getRoute().getDestination().getIcaoCode(),
+                updatedFlight.getScheduledDepartureTime(),
+                updatedFlight.getScheduledArrivalTime(),
+                updatedFlight.getStatus()
+        );
     }
 }
