@@ -2,6 +2,8 @@ package com.storlakovic.airlineoperationssimulator.flight;
 
 import com.storlakovic.airlineoperationssimulator.airport.Airport;
 import com.storlakovic.airlineoperationssimulator.airport.AirportStatus;
+import com.storlakovic.airlineoperationssimulator.common.FlightNotFoundException;
+import com.storlakovic.airlineoperationssimulator.common.InvalidFlightTimeException;
 import com.storlakovic.airlineoperationssimulator.common.RouteNotFoundException;
 import com.storlakovic.airlineoperationssimulator.flight.dto.CreateFlightRequest;
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightResponse;
@@ -152,6 +154,113 @@ class FlightServiceTest {
                 .isEqualTo("OS123");
     }
 
+    @Test
+    void shouldReturnFlightById() {
+        Route route = route(10L, airport(1L, "LOWW"), airport(2L, "KJFK"));
+
+        OffsetDateTime departure = OffsetDateTime.of(2026, 9, 20, 10, 0, 0, 0, ZoneOffset.ofHours(2));
+        OffsetDateTime arrival = OffsetDateTime.of(2026, 9, 20, 13, 30, 0, 0, ZoneOffset.ofHours(-4));
+
+        Flight flight = new Flight("OS123", route, departure, arrival);
+        ReflectionTestUtils.setField(flight, "id", 1L);
+
+        when(repository.findById(1L))
+                .thenReturn(Optional.of(flight));
+
+        FlightResponse result = service.getFlight(1L);
+
+        assertThat(result.id())
+                .isEqualTo(1L);
+
+        assertThat(result.flightNumber())
+                .isEqualTo("OS123");
+
+        assertThat(result.route().originIcaoCode())
+                .isEqualTo("LOWW");
+
+        assertThat(result.route().destinationIcaoCode())
+                .isEqualTo("KJFK");
+
+        assertThat(result.scheduledDepartureTime())
+                .isEqualTo(departure);
+
+        assertThat(result.scheduledArrivalTime())
+                .isEqualTo(arrival);
+
+        assertThat(result.status())
+                .isEqualTo(FlightStatus.UNKNOWN);
+    }
+
+
+    @Test
+    void shouldThrowWhenFlightDoesNotExist() {
+        when(repository.findById(99L))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                service.getFlight(99L)
+        )
+                .isInstanceOf(FlightNotFoundException.class)
+                .hasMessage("Flight with id: 99 not found");
+    }
+
+    @Test
+    void shouldThrowWhenDepartureIsAfterArrival() {
+        CreateFlightRequest request = new CreateFlightRequest(
+                "OS123",
+                10L,
+                OffsetDateTime.of(2026, 9, 20, 14, 0, 0, 0, ZoneOffset.UTC),
+                OffsetDateTime.of(2026, 9, 20, 13, 0, 0, 0, ZoneOffset.UTC)
+        );
+
+        assertThatThrownBy(() ->
+                service.createFlight(request)
+        )
+                .isInstanceOf(InvalidFlightTimeException.class)
+                .hasMessage("Departure time must be before arrival time");
+
+        verify(routeRepository, never()).findById(any());
+        verify(repository, never()).save(any());
+    }
+
+
+    @Test
+    void shouldThrowWhenDepartureEqualsArrival() {
+        OffsetDateTime sameTime = OffsetDateTime.of(2026, 9, 20, 10, 0, 0, 0, ZoneOffset.UTC);
+
+        CreateFlightRequest request = new CreateFlightRequest(
+                "OS123",
+                10L,
+                sameTime,
+                sameTime
+        );
+
+        assertThatThrownBy(() ->
+                service.createFlight(request)
+        )
+                .isInstanceOf(InvalidFlightTimeException.class);
+
+        verify(repository, never()).save(any());
+    }
+
+
+    @Test
+    void shouldHandleDifferentOffsetsCorrectly() {
+        Route route = route(10L, airport(1L, "LOWW"), airport(2L, "KJFK"));
+
+        // 20:00+02:00 = 18:00 UTC, 15:00-04:00 = 19:00 UTC → departure is before arrival
+        OffsetDateTime departure = OffsetDateTime.of(2026, 9, 20, 20, 0, 0, 0, ZoneOffset.ofHours(2));
+        OffsetDateTime arrival = OffsetDateTime.of(2026, 9, 20, 15, 0, 0, 0, ZoneOffset.ofHours(-4));
+
+        CreateFlightRequest request = new CreateFlightRequest("OS123", 10L, departure, arrival);
+
+        when(routeRepository.findById(10L)).thenReturn(Optional.of(route));
+        when(repository.save(any(Flight.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        FlightResponse result = service.createFlight(request);
+
+        assertThat(result.scheduledDepartureTime()).isEqualTo(departure);
+    }
 
     private Route route(Long id, Airport origin, Airport destination) {
         Route route = new Route(origin, destination);
