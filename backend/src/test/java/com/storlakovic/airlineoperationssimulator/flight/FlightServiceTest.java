@@ -5,9 +5,10 @@ import com.storlakovic.airlineoperationssimulator.airport.AirportStatus;
 import com.storlakovic.airlineoperationssimulator.common.FlightNotFoundException;
 import com.storlakovic.airlineoperationssimulator.common.InvalidFlightTimeException;
 import com.storlakovic.airlineoperationssimulator.common.RouteNotFoundException;
-import com.storlakovic.airlineoperationssimulator.flight.dto.CreateFlightRequest;
+import com.storlakovic.airlineoperationssimulator.flight.dto.FlightCreateRequest;
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightDetailedResponse;
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightResponse;
+import com.storlakovic.airlineoperationssimulator.flight.dto.FlightUpdateRequest;
 import com.storlakovic.airlineoperationssimulator.route.Route;
 import com.storlakovic.airlineoperationssimulator.route.RouteRepository;
 import org.junit.jupiter.api.Test;
@@ -46,7 +47,7 @@ class FlightServiceTest {
         OffsetDateTime departure = OffsetDateTime.of(2026, 9, 20, 10, 0, 0, 0, ZoneOffset.ofHours(2));
         OffsetDateTime arrival = OffsetDateTime.of(2026, 9, 20, 13, 30, 0, 0, ZoneOffset.ofHours(-4));
 
-        CreateFlightRequest request = new CreateFlightRequest(
+        FlightCreateRequest request = new FlightCreateRequest(
                 "OS123",
                 10L,
                 departure,
@@ -101,7 +102,7 @@ class FlightServiceTest {
 
     @Test
     void shouldThrowWhenRouteDoesNotExist() {
-        CreateFlightRequest request = new CreateFlightRequest(
+        FlightCreateRequest request = new FlightCreateRequest(
                 "OS123",
                 99L,
                 OffsetDateTime.of(2026, 9, 20, 10, 0, 0, 0, ZoneOffset.UTC),
@@ -130,7 +131,7 @@ class FlightServiceTest {
                 airport(2L, "KJFK")
         );
 
-        CreateFlightRequest request = new CreateFlightRequest(
+        FlightCreateRequest request = new FlightCreateRequest(
                 "OS123",
                 10L,
                 OffsetDateTime.of(2026, 9, 20, 10, 0, 0, 0, ZoneOffset.UTC),
@@ -208,7 +209,7 @@ class FlightServiceTest {
 
     @Test
     void shouldThrowWhenDepartureIsAfterArrival() {
-        CreateFlightRequest request = new CreateFlightRequest(
+        FlightCreateRequest request = new FlightCreateRequest(
                 "OS123",
                 10L,
                 OffsetDateTime.of(2026, 9, 20, 14, 0, 0, 0, ZoneOffset.UTC),
@@ -230,7 +231,7 @@ class FlightServiceTest {
     void shouldThrowWhenDepartureEqualsArrival() {
         OffsetDateTime sameTime = OffsetDateTime.of(2026, 9, 20, 10, 0, 0, 0, ZoneOffset.UTC);
 
-        CreateFlightRequest request = new CreateFlightRequest(
+        FlightCreateRequest request = new FlightCreateRequest(
                 "OS123",
                 10L,
                 sameTime,
@@ -254,7 +255,7 @@ class FlightServiceTest {
         OffsetDateTime departure = OffsetDateTime.of(2026, 9, 20, 20, 0, 0, 0, ZoneOffset.ofHours(2));
         OffsetDateTime arrival = OffsetDateTime.of(2026, 9, 20, 15, 0, 0, 0, ZoneOffset.ofHours(-4));
 
-        CreateFlightRequest request = new CreateFlightRequest("OS123", 10L, departure, arrival);
+        FlightCreateRequest request = new FlightCreateRequest("OS123", 10L, departure, arrival);
 
         when(routeRepository.findById(10L)).thenReturn(Optional.of(route));
         when(repository.save(any(Flight.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -312,6 +313,105 @@ class FlightServiceTest {
         List<FlightResponse> result = service.getAllFlights();
 
         assertThat(result).isEmpty();
+    }
+
+    @Test
+    void shouldUpdateBothTimes() {
+        Route route = route(10L, airport(1L, "LOWW"), airport(2L, "KJFK"));
+
+        Flight flight = new Flight(
+                "OS123", route,
+                OffsetDateTime.of(2026, 9, 20, 10, 0, 0, 0, ZoneOffset.UTC),
+                OffsetDateTime.of(2026, 9, 20, 13, 0, 0, 0, ZoneOffset.UTC)
+        );
+        ReflectionTestUtils.setField(flight, "id", 1L);
+
+        OffsetDateTime newDeparture = OffsetDateTime.of(2026, 9, 20, 14, 0, 0, 0, ZoneOffset.UTC);
+        OffsetDateTime newArrival = OffsetDateTime.of(2026, 9, 20, 17, 0, 0, 0, ZoneOffset.UTC);
+
+        FlightUpdateRequest request = new FlightUpdateRequest(newDeparture, newArrival);
+
+        when(repository.findById(1L)).thenReturn(Optional.of(flight));
+        when(repository.save(any(Flight.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        FlightResponse result = service.updateFlight(request, 1L);
+
+        assertThat(result.scheduledDepartureTime()).isEqualTo(newDeparture);
+        assertThat(result.scheduledArrivalTime()).isEqualTo(newArrival);
+    }
+
+
+    @Test
+    void shouldUpdateOnlyDepartureAndKeepExistingArrival() {
+        Route route = route(10L, airport(1L, "LOWW"), airport(2L, "KJFK"));
+
+        OffsetDateTime originalArrival = OffsetDateTime.of(2026, 9, 20, 13, 0, 0, 0, ZoneOffset.UTC);
+
+        Flight flight = new Flight(
+                "OS123", route,
+                OffsetDateTime.of(2026, 9, 20, 10, 0, 0, 0, ZoneOffset.UTC),
+                originalArrival
+        );
+        ReflectionTestUtils.setField(flight, "id", 1L);
+
+        OffsetDateTime newDeparture = OffsetDateTime.of(2026, 9, 20, 11, 0, 0, 0, ZoneOffset.UTC);
+
+        FlightUpdateRequest request = new FlightUpdateRequest(newDeparture, null);
+
+        when(repository.findById(1L)).thenReturn(Optional.of(flight));
+        when(repository.save(any(Flight.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        FlightResponse result = service.updateFlight(request, 1L);
+
+        assertThat(result.scheduledDepartureTime()).isEqualTo(newDeparture);
+        assertThat(result.scheduledArrivalTime()).isEqualTo(originalArrival); // ← genau der Fall, der vorhin kaputt war
+    }
+
+
+    @Test
+    void shouldThrowWhenMergedTimesAreInvalid() {
+        Route route = route(10L, airport(1L, "LOWW"), airport(2L, "KJFK"));
+
+        Flight flight = new Flight(
+                "OS123", route,
+                OffsetDateTime.of(2026, 9, 20, 10, 0, 0, 0, ZoneOffset.UTC),
+                OffsetDateTime.of(2026, 9, 20, 13, 0, 0, 0, ZoneOffset.UTC)
+        );
+        ReflectionTestUtils.setField(flight, "id", 1L);
+
+        // Nur departure wird geändert, auf einen Zeitpunkt NACH der bestehenden arrival-Zeit
+        OffsetDateTime invalidDeparture = OffsetDateTime.of(2026, 9, 20, 14, 0, 0, 0, ZoneOffset.UTC);
+
+        FlightUpdateRequest request = new FlightUpdateRequest(invalidDeparture, null);
+
+        when(repository.findById(1L)).thenReturn(Optional.of(flight));
+
+        assertThatThrownBy(() ->
+                service.updateFlight(request, 1L)
+        )
+                .isInstanceOf(InvalidFlightTimeException.class)
+                .hasMessage("Departure time must be before arrival time");
+
+        verify(repository, never()).save(any());
+    }
+
+
+    @Test
+    void shouldThrowWhenFlightDoesNotExistWhenUpdating() {
+        FlightUpdateRequest request = new FlightUpdateRequest(
+                OffsetDateTime.of(2026, 9, 20, 10, 0, 0, 0, ZoneOffset.UTC),
+                OffsetDateTime.of(2026, 9, 20, 13, 0, 0, 0, ZoneOffset.UTC)
+        );
+
+        when(repository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                service.updateFlight(request, 99L)
+        )
+                .isInstanceOf(FlightNotFoundException.class)
+                .hasMessage("Flight with id: 99 not found");
+
+        verify(repository, never()).save(any());
     }
 
     private Route route(Long id, Airport origin, Airport destination) {
