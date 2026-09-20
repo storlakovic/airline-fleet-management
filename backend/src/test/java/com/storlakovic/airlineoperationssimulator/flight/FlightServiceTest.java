@@ -6,6 +6,7 @@ import com.storlakovic.airlineoperationssimulator.common.FlightNotFoundException
 import com.storlakovic.airlineoperationssimulator.common.InvalidFlightTimeException;
 import com.storlakovic.airlineoperationssimulator.common.RouteNotFoundException;
 import com.storlakovic.airlineoperationssimulator.flight.dto.CreateFlightRequest;
+import com.storlakovic.airlineoperationssimulator.flight.dto.FlightDetailedResponse;
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightResponse;
 import com.storlakovic.airlineoperationssimulator.route.Route;
 import com.storlakovic.airlineoperationssimulator.route.RouteRepository;
@@ -15,6 +16,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -167,7 +169,7 @@ class FlightServiceTest {
         when(repository.findById(1L))
                 .thenReturn(Optional.of(flight));
 
-        FlightResponse result = service.getFlight(1L);
+        FlightDetailedResponse result = service.getFlight(1L);
 
         assertThat(result.id())
                 .isEqualTo(1L);
@@ -175,10 +177,10 @@ class FlightServiceTest {
         assertThat(result.flightNumber())
                 .isEqualTo("OS123");
 
-        assertThat(result.route().originIcaoCode())
+        assertThat(result.originIcaoCode())
                 .isEqualTo("LOWW");
 
-        assertThat(result.route().destinationIcaoCode())
+        assertThat(result.destinationIcaoCode())
                 .isEqualTo("KJFK");
 
         assertThat(result.scheduledDepartureTime())
@@ -260,6 +262,56 @@ class FlightServiceTest {
         FlightResponse result = service.createFlight(request);
 
         assertThat(result.scheduledDepartureTime()).isEqualTo(departure);
+    }
+
+    @Test
+    void shouldReturnAllFlights() {
+        Route route1 = route(10L, airport(1L, "LOWW"), airport(2L, "KJFK"));
+        Route route2 = route(20L, airport(3L, "EDDF"), airport(4L, "LFPG"));
+
+        Flight flight1 = new Flight(
+                "OS123",
+                route1,
+                OffsetDateTime.of(2026, 9, 20, 10, 0, 0, 0, ZoneOffset.UTC),
+                OffsetDateTime.of(2026, 9, 20, 13, 0, 0, 0, ZoneOffset.UTC)
+        );
+        ReflectionTestUtils.setField(flight1, "id", 1L);
+
+        Flight flight2 = new Flight(
+                "LH456",
+                route2,
+                OffsetDateTime.of(2026, 9, 21, 8, 0, 0, 0, ZoneOffset.UTC),
+                OffsetDateTime.of(2026, 9, 21, 9, 30, 0, 0, ZoneOffset.UTC)
+        );
+        ReflectionTestUtils.setField(flight2, "id", 2L);
+
+        when(repository.findAll())
+                .thenReturn(List.of(flight1, flight2));
+
+        List<FlightResponse> result = service.getAllFlights();
+
+        assertThat(result).hasSize(2);
+
+        assertThat(result.get(0).id()).isEqualTo(1L);
+        assertThat(result.get(0).flightNumber()).isEqualTo("OS123");
+        assertThat(result.get(0).route().originIcaoCode()).isEqualTo("LOWW");
+        assertThat(result.get(0).route().destinationIcaoCode()).isEqualTo("KJFK");
+
+        assertThat(result.get(1).id()).isEqualTo(2L);
+        assertThat(result.get(1).flightNumber()).isEqualTo("LH456");
+        assertThat(result.get(1).route().originIcaoCode()).isEqualTo("EDDF");
+        assertThat(result.get(1).route().destinationIcaoCode()).isEqualTo("LFPG");
+    }
+
+
+    @Test
+    void shouldReturnEmptyListWhenNoFlightsExist() {
+        when(repository.findAll())
+                .thenReturn(List.of());
+
+        List<FlightResponse> result = service.getAllFlights();
+
+        assertThat(result).isEmpty();
     }
 
     private Route route(Long id, Airport origin, Airport destination) {
