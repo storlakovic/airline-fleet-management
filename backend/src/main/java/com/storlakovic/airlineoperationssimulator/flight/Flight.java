@@ -1,6 +1,7 @@
 package com.storlakovic.airlineoperationssimulator.flight;
 
 
+import com.storlakovic.airlineoperationssimulator.aircraft.Aircraft;
 import com.storlakovic.airlineoperationssimulator.route.Route;
 import jakarta.persistence.*;
 
@@ -39,6 +40,9 @@ public class Flight {
 
     @Column(nullable = false)
     private String airline; // Emirates will be standard Airline for Flights
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Aircraft aircraft;
 
     public Flight() {}
 
@@ -82,6 +86,10 @@ public class Flight {
         return airline;
     }
 
+    public Aircraft getAircraft() {
+        return aircraft;
+    }
+
     public Long getId() {
         return id;
     }
@@ -96,5 +104,9 @@ public class Flight {
 
     public void setStatus(FlightStatus status) {
         this.status = status;
+    }
+
+    public void setAircraft(Aircraft aircraft) {
+        this.aircraft = aircraft;
     }
 }

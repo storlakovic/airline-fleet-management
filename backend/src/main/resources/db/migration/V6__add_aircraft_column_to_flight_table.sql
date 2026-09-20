@@ -1,0 +1,5 @@
+ALTER TABLE flight
+    ADD aircraft_id BIGINT;
+
+ALTER TABLE flight
+    ADD CONSTRAINT FK_FLIGHT_ON_AIRCRAFT FOREIGN KEY (aircraft_id) REFERENCES aircraft (id);
