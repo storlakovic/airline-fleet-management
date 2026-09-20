@@ -1,8 +1,11 @@
 package com.storlakovic.airlineoperationssimulator.flight;
 
 import com.storlakovic.airlineoperationssimulator.flight.dto.CreateFlightRequest;
+import com.storlakovic.airlineoperationssimulator.flight.dto.FlightDetailedResponse;
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightResponse;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping(path = "/flight")
@@ -19,8 +22,13 @@ public class FlightController {
         return flightService.createFlight(createFlightRequest);
     }
 
-    @GetMapping
-    public FlightResponse getFlight(@RequestParam Long id) {
+    @GetMapping("/{id}")
+    public FlightDetailedResponse getFlight(@RequestParam Long id) {
         return flightService.getFlight(id);
+    }
+
+    @GetMapping
+    public List<FlightResponse> getAllFlights() {
+        return flightService.getAllFlights();
     }
 }

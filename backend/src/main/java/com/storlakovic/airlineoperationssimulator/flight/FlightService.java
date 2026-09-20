@@ -4,11 +4,14 @@ import com.storlakovic.airlineoperationssimulator.common.FlightNotFoundException
 import com.storlakovic.airlineoperationssimulator.common.InvalidFlightTimeException;
 import com.storlakovic.airlineoperationssimulator.common.RouteNotFoundException;
 import com.storlakovic.airlineoperationssimulator.flight.dto.CreateFlightRequest;
+import com.storlakovic.airlineoperationssimulator.flight.dto.FlightDetailedResponse;
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightResponse;
 import com.storlakovic.airlineoperationssimulator.route.Route;
 import com.storlakovic.airlineoperationssimulator.route.RouteRepository;
 import com.storlakovic.airlineoperationssimulator.route.dto.RouteResponse;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class FlightService {
@@ -59,23 +62,40 @@ public class FlightService {
         );
     }
 
-    public FlightResponse getFlight(Long id) {
+    public FlightDetailedResponse getFlight(Long id) {
         Flight flight = repository.findById(id).orElseThrow(() -> new FlightNotFoundException("Flight with id: " + id + " not found"));
-        return new FlightResponse(
+        return new FlightDetailedResponse(
+                flight.getId(),
+                flight.getFlightNumber(),
+                flight.getRoute().getOrigin().getIcaoCode(),
+                flight.getRoute().getOrigin().getName(),
+                flight.getRoute().getDestination().getIcaoCode(),
+                flight.getRoute().getDestination().getName(),
+                flight.getScheduledDepartureTime(),
+                flight.getScheduledArrivalTime(),
+                flight.getActualDepartureTime(),
+                flight.getActualArrivalTime(),
+                flight.getStatus()
+        );
+    }
+
+    public List<FlightResponse> getAllFlights() {
+        List<Flight> flights = repository.findAll();
+        return flights.stream().map(flight -> new FlightResponse(
                 flight.getId(),
                 flight.getFlightNumber(),
                 new RouteResponse(
-                    flight.getRoute().getId(),
-                    flight.getRoute().getOrigin().getId(),
-                    flight.getRoute().getOrigin().getIcaoCode(),
-                    flight.getRoute().getDestination().getId(),
-                    flight.getRoute().getDestination().getIcaoCode()
+                        flight.getRoute().getId(),
+                        flight.getRoute().getOrigin().getId(),
+                        flight.getRoute().getOrigin().getIcaoCode(),
+                        flight.getRoute().getDestination().getId(),
+                        flight.getRoute().getDestination().getIcaoCode()
                 ),
                 flight.getRoute().getOrigin().getIcaoCode(),
                 flight.getRoute().getDestination().getIcaoCode(),
                 flight.getScheduledDepartureTime(),
                 flight.getScheduledArrivalTime(),
                 flight.getStatus()
-        );
+        )).toList();
     }
 }
