@@ -600,6 +600,91 @@ class FlightServiceTest {
         assertThat(flight.getAircraft()).isNull();
     }
 
+    @Test
+    void shouldThrowWhenAircraftHasOverlappingFlight() {
+        Route route = route(10L, airport(1L, "LOWW"), airport(2L, "KJFK"));
+        Flight newFlight = flightWithTimes(route,
+                OffsetDateTime.of(2026, 9, 20, 10, 0, 0, 0, ZoneOffset.UTC),
+                OffsetDateTime.of(2026, 9, 20, 13, 0, 0, 0, ZoneOffset.UTC));
+        ReflectionTestUtils.setField(newFlight, "id", 1L);
+
+        Flight existingFlight = flightWithTimes(route,
+                OffsetDateTime.of(2026, 9, 20, 12, 0, 0, 0, ZoneOffset.UTC),
+                OffsetDateTime.of(2026, 9, 20, 15, 0, 0, 0, ZoneOffset.UTC));
+        ReflectionTestUtils.setField(existingFlight, "status", FlightStatus.SCHEDULED);
+
+        Aircraft aircraft = aircraft(5L, AircraftStatus.IN_SERVICE);
+
+        when(repository.findById(1L)).thenReturn(Optional.of(newFlight));
+        when(aircraftRepository.findById(5L)).thenReturn(Optional.of(aircraft));
+        when(repository.findByAircraft_Id(5L)).thenReturn(List.of(existingFlight));
+
+        assertThatThrownBy(() ->
+                service.assignAircraft(1L, 5L)
+        )
+                .isInstanceOf(AircraftAlreadyAssignedException.class);
+
+        verify(repository, never()).save(any());
+    }
+
+
+    @Test
+    void shouldAllowAssignmentWhenOverlappingFlightIsCancelled() {
+        Route route = route(10L, airport(1L, "LOWW"), airport(2L, "KJFK"));
+        Flight newFlight = flightWithTimes(route,
+                OffsetDateTime.of(2026, 9, 20, 10, 0, 0, 0, ZoneOffset.UTC),
+                OffsetDateTime.of(2026, 9, 20, 13, 0, 0, 0, ZoneOffset.UTC));
+        ReflectionTestUtils.setField(newFlight, "id", 1L);
+
+        Flight cancelledFlight = flightWithTimes(route,
+                OffsetDateTime.of(2026, 9, 20, 12, 0, 0, 0, ZoneOffset.UTC),
+                OffsetDateTime.of(2026, 9, 20, 15, 0, 0, 0, ZoneOffset.UTC));
+        ReflectionTestUtils.setField(cancelledFlight, "status", FlightStatus.CANCELLED);
+
+        Aircraft aircraft = aircraft(5L, AircraftStatus.IN_SERVICE);
+
+        when(repository.findById(1L)).thenReturn(Optional.of(newFlight));
+        when(aircraftRepository.findById(5L)).thenReturn(Optional.of(aircraft));
+        when(repository.findByAircraft_Id(5L)).thenReturn(List.of(cancelledFlight));
+        when(repository.save(any(Flight.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        FlightResponse result = service.assignAircraft(1L, 5L);
+
+        assertThat(result.id()).isEqualTo(1L);
+        verify(repository).save(newFlight);
+    }
+
+
+    @Test
+    void shouldAllowAssignmentWhenExistingFlightDoesNotOverlap() {
+        Route route = route(10L, airport(1L, "LOWW"), airport(2L, "KJFK"));
+        Flight newFlight = flightWithTimes(route,
+                OffsetDateTime.of(2026, 9, 20, 10, 0, 0, 0, ZoneOffset.UTC),
+                OffsetDateTime.of(2026, 9, 20, 13, 0, 0, 0, ZoneOffset.UTC));
+        ReflectionTestUtils.setField(newFlight, "id", 1L);
+
+        Flight nonOverlapping = flightWithTimes(route,
+                OffsetDateTime.of(2026, 9, 20, 14, 0, 0, 0, ZoneOffset.UTC),
+                OffsetDateTime.of(2026, 9, 20, 16, 0, 0, 0, ZoneOffset.UTC));
+        ReflectionTestUtils.setField(nonOverlapping, "status", FlightStatus.SCHEDULED);
+
+        Aircraft aircraft = aircraft(5L, AircraftStatus.IN_SERVICE);
+
+        when(repository.findById(1L)).thenReturn(Optional.of(newFlight));
+        when(aircraftRepository.findById(5L)).thenReturn(Optional.of(aircraft));
+        when(repository.findByAircraft_Id(5L)).thenReturn(List.of(nonOverlapping));
+        when(repository.save(any(Flight.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        FlightResponse result = service.assignAircraft(1L, 5L);
+
+        assertThat(result.id()).isEqualTo(1L);
+    }
+
+
+    private Flight flightWithTimes(Route route, OffsetDateTime departure, OffsetDateTime arrival) {
+        return new Flight("OS123", route, departure, arrival);
+    }
+
     private Aircraft aircraft(Long id, AircraftStatus status) {
         Aircraft aircraft = mock(Aircraft.class);
         AircraftType aircraftType = mock(AircraftType.class);
