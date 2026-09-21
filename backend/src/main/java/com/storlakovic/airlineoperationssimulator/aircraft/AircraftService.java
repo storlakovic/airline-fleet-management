@@ -8,7 +8,9 @@ import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftUpdateReq
 import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftType;
 import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftTypeRepository;
 import com.storlakovic.airlineoperationssimulator.common.AircraftAlreadyExistsException;
+import com.storlakovic.airlineoperationssimulator.common.AircraftDeletionNotAllowedException;
 import com.storlakovic.airlineoperationssimulator.common.AircraftNotFoundException;
+import com.storlakovic.airlineoperationssimulator.flight.FlightRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,10 +20,12 @@ public class AircraftService {
 
     private final AircraftRepository aircraftRepository;
     private final AircraftTypeRepository aircraftTypeRepository;
+    private final FlightRepository flightRepository;
 
-    public AircraftService(AircraftRepository aircraftRepository, AircraftTypeRepository aircraftTypeRepository) {
+    public AircraftService(AircraftRepository aircraftRepository, AircraftTypeRepository aircraftTypeRepository, FlightRepository flightRepository) {
         this.aircraftRepository = aircraftRepository;
         this.aircraftTypeRepository = aircraftTypeRepository;
+        this.flightRepository = flightRepository;
     }
 
 
@@ -77,5 +81,15 @@ public class AircraftService {
                 savedAircraft.getAircraftType().getIcaoCode(),
                 savedAircraft.getStatus()
         );
+    }
+
+    public void deleteAircraft(Long id) {
+        if(!aircraftRepository.existsById(id)){
+            throw new AircraftNotFoundException("Aircraft with id " + id + " not found");
+        }
+        if(!flightRepository.findByAircraft_Id(id).isEmpty()){
+            throw new AircraftDeletionNotAllowedException("Aircraft with id " + id + " cannot be deleted, because it is assigned to an active flight");
+        }
+        aircraftRepository.deleteById(id);
     }
 }

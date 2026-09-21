@@ -6,13 +6,22 @@ import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftResponse;
 import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftUpdateRequest;
 import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftType;
 import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftTypeRepository;
+import com.storlakovic.airlineoperationssimulator.airport.Airport;
+import com.storlakovic.airlineoperationssimulator.airport.AirportStatus;
 import com.storlakovic.airlineoperationssimulator.common.AircraftAlreadyExistsException;
+import com.storlakovic.airlineoperationssimulator.common.AircraftDeletionNotAllowedException;
 import com.storlakovic.airlineoperationssimulator.common.AircraftNotFoundException;
 import com.storlakovic.airlineoperationssimulator.common.AircraftStatusTransitionException;
 
+import com.storlakovic.airlineoperationssimulator.flight.Flight;
+import com.storlakovic.airlineoperationssimulator.flight.FlightRepository;
+import com.storlakovic.airlineoperationssimulator.flight.FlightStatus;
+import com.storlakovic.airlineoperationssimulator.route.Route;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -30,8 +39,11 @@ class AircraftServiceTest {
     private final AircraftTypeRepository aircraftTypeRepository =
             mock(AircraftTypeRepository.class);
 
+    private final FlightRepository flightRepository =
+            mock(FlightRepository.class);
+
     private final AircraftService service =
-            new AircraftService(repository, aircraftTypeRepository);
+            new AircraftService(repository, aircraftTypeRepository, flightRepository);
 
 
     @Test
@@ -409,6 +421,73 @@ class AircraftServiceTest {
                 .save(any(Aircraft.class));
     }
 
+    @Test
+    void shouldDeleteExistingAircraft() {
+        when(repository.existsById(1L))
+                .thenReturn(true);
+
+        service.deleteAircraft(1L);
+
+        verify(repository).deleteById(1L);
+    }
+
+
+    @Test
+    void shouldThrowWhenDeletingNonExistingAircraft() {
+        when(repository.existsById(99L))
+                .thenReturn(false);
+
+        assertThatThrownBy(() ->
+                service.deleteAircraft(99L)
+        )
+                .isInstanceOf(AircraftNotFoundException.class)
+                .hasMessage("Aircraft with id 99 not found");
+
+        verify(repository, never())
+                .deleteById(any());
+    }
+
+    @Test
+    void shouldThrowWhenDeletingAircraftInActiveFlight() {
+        Route route = route(10L, airport(1L, "LOWW"), airport(2L, "KJFK"));
+        Flight flight = flightWithStatus(route, FlightStatus.SCHEDULED);
+
+        when(repository.existsById(10L)).thenReturn(true);
+        when(flightRepository.findByAircraft_Id(10L)).thenReturn(Optional.of(flight).stream().toList());
+
+        assertThatThrownBy(() ->
+                service.deleteAircraft(10L)
+        )
+                .isInstanceOf(AircraftDeletionNotAllowedException.class)
+                .hasMessage("Aircraft with id 10 cannot be deleted, because it is assigned to an active flight");
+
+        verify(repository, never())
+                .deleteById(any());
+    }
+
+    private Flight flightWithStatus(Route route, FlightStatus status) {
+        Flight flight = new Flight(
+                "OS123", route,
+                OffsetDateTime.of(2026, 9, 20, 10, 0, 0, 0, ZoneOffset.UTC),
+                OffsetDateTime.of(2026, 9, 20, 13, 0, 0, 0, ZoneOffset.UTC)
+        );
+        ReflectionTestUtils.setField(flight, "status", status);
+        return flight;
+    }
+
+    private Airport airport(Long id, String icaoCode) {
+        Airport airport = new Airport(
+                icaoCode, null, "Test Airport", "Test City", "AT", 48.0, 16.0, "large_airport", AirportStatus.OPERATIONAL
+        );
+        ReflectionTestUtils.setField(airport, "id", id);
+        return airport;
+    }
+
+    private Route route(Long id, Airport origin, Airport destination) {
+        Route route = new Route(origin, destination);
+        ReflectionTestUtils.setField(route, "id", id);
+        return route;
+    }
 
     private AircraftType createAircraftType(
             Long id,

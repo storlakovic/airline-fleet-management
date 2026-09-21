@@ -4,6 +4,7 @@ import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftCreateReq
 import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftDetailsResponse;
 import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftResponse;
 import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftUpdateRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -37,5 +38,11 @@ public class AircraftController {
     @GetMapping("/{id}")
     public AircraftDetailsResponse getAircraftById(@RequestParam Long id) {
         return aircraftService.getAircraftById(id);
+    }
+
+    @DeleteMapping("remove/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteAircraft(@PathVariable Long id) {
+        aircraftService.deleteAircraft(id);
     }
 }
