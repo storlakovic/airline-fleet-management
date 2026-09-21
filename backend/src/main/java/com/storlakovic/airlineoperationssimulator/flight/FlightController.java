@@ -24,7 +24,7 @@ public class FlightController {
     }
 
     @GetMapping("/{id}")
-    public FlightDetailedResponse getFlight(@RequestParam Long id) {
+    public FlightDetailedResponse getFlight(@PathVariable Long id) {
         return flightService.getFlight(id);
     }
 
@@ -34,12 +34,17 @@ public class FlightController {
     }
 
     @PutMapping("/update/{id}")
-    public FlightResponse updateFlight(@RequestBody FlightUpdateRequest flightUpdateRequest, @RequestParam Long id) {
+    public FlightResponse updateFlight(@RequestBody FlightUpdateRequest flightUpdateRequest, @PathVariable Long id) {
         return flightService.updateFlight(flightUpdateRequest, id);
     }
 
     @PutMapping("/cancel/{id}")
-    public FlightResponse cancelFlight(@RequestParam Long id) {
+    public FlightResponse cancelFlight(@PathVariable Long id) {
         return flightService.cancelFlight(id);
+    }
+
+    @PutMapping("/assign-aircraft/{flight_id}/{aircraft_id}")
+    public FlightResponse assignAircraft(@PathVariable Long flight_id, @PathVariable Long aircraft_id) {
+        return flightService.assignAircraft(flight_id, aircraft_id);
     }
 }

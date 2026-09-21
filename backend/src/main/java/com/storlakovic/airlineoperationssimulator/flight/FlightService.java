@@ -1,9 +1,9 @@
 package com.storlakovic.airlineoperationssimulator.flight;
 
-import com.storlakovic.airlineoperationssimulator.common.FlightCancellationNotAllowedException;
-import com.storlakovic.airlineoperationssimulator.common.FlightNotFoundException;
-import com.storlakovic.airlineoperationssimulator.common.InvalidFlightTimeException;
-import com.storlakovic.airlineoperationssimulator.common.RouteNotFoundException;
+import com.storlakovic.airlineoperationssimulator.aircraft.Aircraft;
+import com.storlakovic.airlineoperationssimulator.aircraft.AircraftRepository;
+import com.storlakovic.airlineoperationssimulator.aircraft.AircraftStatus;
+import com.storlakovic.airlineoperationssimulator.common.*;
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightCreateRequest;
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightDetailedResponse;
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightResponse;
@@ -20,10 +20,12 @@ import java.util.List;
 public class FlightService {
     private final FlightRepository repository;
     private final RouteRepository routeRepository;
+    private final AircraftRepository aircraftRepository;
 
-    public FlightService(FlightRepository repository,  RouteRepository routeRepository) {
+    public FlightService(FlightRepository repository,  RouteRepository routeRepository,  AircraftRepository aircraftRepository) {
         this.repository = repository;
         this.routeRepository = routeRepository;
+        this.aircraftRepository = aircraftRepository;
     }
 
     public FlightResponse createFlight(FlightCreateRequest request) {
@@ -61,7 +63,9 @@ public class FlightService {
                 savedFlight.getRoute().getDestination().getIcaoCode(),
                 savedFlight.getScheduledDepartureTime(),
                 savedFlight.getScheduledArrivalTime(),
-                savedFlight.getStatus()
+                savedFlight.getStatus(),
+                savedFlight.getAircraft() == null ? null : savedFlight.getAircraft().getAircraftType().getIcaoCode(),
+                savedFlight.getAircraft() == null ? null : savedFlight.getAircraft().getRegistration()
         );
     }
 
@@ -98,7 +102,9 @@ public class FlightService {
                 flight.getRoute().getDestination().getIcaoCode(),
                 flight.getScheduledDepartureTime(),
                 flight.getScheduledArrivalTime(),
-                flight.getStatus()
+                flight.getStatus(),
+                flight.getAircraft() == null ? null : flight.getAircraft().getAircraftType().getIcaoCode(),
+                flight.getAircraft() == null ? null : flight.getAircraft().getRegistration()
         )).toList();
     }
 
@@ -134,7 +140,9 @@ public class FlightService {
                 updatedFlight.getRoute().getDestination().getIcaoCode(),
                 updatedFlight.getScheduledDepartureTime(),
                 updatedFlight.getScheduledArrivalTime(),
-                updatedFlight.getStatus()
+                updatedFlight.getStatus(),
+                updatedFlight.getAircraft() == null ? null : updatedFlight.getAircraft().getAircraftType().getIcaoCode(),
+                updatedFlight.getAircraft() == null ? null : updatedFlight.getAircraft().getRegistration()
         );
     }
 
@@ -165,7 +173,64 @@ public class FlightService {
                 updatedFlight.getRoute().getDestination().getIcaoCode(),
                 updatedFlight.getScheduledDepartureTime(),
                 updatedFlight.getScheduledArrivalTime(),
-                updatedFlight.getStatus()
+                updatedFlight.getStatus(),
+                updatedFlight.getAircraft() == null ? null : updatedFlight.getAircraft().getAircraftType().getIcaoCode(),
+                updatedFlight.getAircraft() == null ? null : updatedFlight.getAircraft().getRegistration()
+        );
+    }
+
+    public FlightResponse assignAircraft(Long flightId, Long aircraftId) {
+        Flight flight = repository.findById(flightId)
+                .orElseThrow(() -> new FlightNotFoundException(
+                        "Flight with id: " + flightId + " not found"
+                ));
+
+        Aircraft aircraft = aircraftRepository.findById(aircraftId)
+                .orElseThrow(() -> new AircraftNotFoundException(
+                        "Aircraft with id " + aircraftId + " not found"
+                ));
+
+        List<Flight> existingFlights = repository.findByAircraft_Id(aircraftId);
+
+        boolean hasOverlap = existingFlights.stream().filter(existing -> existing.getStatus() != FlightStatus.CANCELLED)
+                .anyMatch(existing ->
+                        flight.getScheduledDepartureTime().isBefore(existing.getScheduledArrivalTime())
+                                && existing.getScheduledDepartureTime().isBefore(flight.getScheduledArrivalTime())
+                );
+
+        if (hasOverlap) {
+            throw new AircraftAlreadyAssignedException(
+                    "Aircraft is already assigned to an overlapping flight"
+            );
+        }
+
+        if (aircraft.getStatus() != AircraftStatus.IN_SERVICE) {
+            throw new AircraftNotOperationalException(
+                    "Aircraft with id " + aircraftId + " is not operational and cannot be assigned"
+            );
+        }
+
+        flight.setAircraft(aircraft);
+
+        Flight updatedFlight = repository.save(flight);
+
+        return new FlightResponse(
+                updatedFlight.getId(),
+                updatedFlight.getFlightNumber(),
+                new RouteResponse(
+                        updatedFlight.getRoute().getId(),
+                        updatedFlight.getRoute().getOrigin().getId(),
+                        updatedFlight.getRoute().getOrigin().getIcaoCode(),
+                        updatedFlight.getRoute().getDestination().getId(),
+                        updatedFlight.getRoute().getDestination().getIcaoCode()
+                ),
+                updatedFlight.getRoute().getOrigin().getIcaoCode(),
+                updatedFlight.getRoute().getDestination().getIcaoCode(),
+                updatedFlight.getScheduledDepartureTime(),
+                updatedFlight.getScheduledArrivalTime(),
+                updatedFlight.getStatus(),
+                updatedFlight.getAircraft() == null ? null : updatedFlight.getAircraft().getAircraftType().getIcaoCode(),
+                updatedFlight.getAircraft() == null ? null : updatedFlight.getAircraft().getRegistration()
         );
     }
 }

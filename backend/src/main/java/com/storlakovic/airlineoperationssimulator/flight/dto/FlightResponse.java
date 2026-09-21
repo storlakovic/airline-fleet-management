@@ -13,5 +13,7 @@ public record FlightResponse(
         String destinationIcaoCode,
         OffsetDateTime scheduledDepartureTime,
         OffsetDateTime scheduledArrivalTime,
-        FlightStatus status
+        FlightStatus status,
+        String aircraftIcaoCode,
+        String aircraftRegistration
 ) {}
