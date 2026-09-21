@@ -1,11 +1,12 @@
 package com.storlakovic.airlineoperationssimulator.flight;
 
+import com.storlakovic.airlineoperationssimulator.aircraft.Aircraft;
+import com.storlakovic.airlineoperationssimulator.aircraft.AircraftRepository;
+import com.storlakovic.airlineoperationssimulator.aircraft.AircraftStatus;
+import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftType;
 import com.storlakovic.airlineoperationssimulator.airport.Airport;
 import com.storlakovic.airlineoperationssimulator.airport.AirportStatus;
-import com.storlakovic.airlineoperationssimulator.common.FlightCancellationNotAllowedException;
-import com.storlakovic.airlineoperationssimulator.common.FlightNotFoundException;
-import com.storlakovic.airlineoperationssimulator.common.InvalidFlightTimeException;
-import com.storlakovic.airlineoperationssimulator.common.RouteNotFoundException;
+import com.storlakovic.airlineoperationssimulator.common.*;
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightCreateRequest;
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightDetailedResponse;
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightResponse;
@@ -33,8 +34,11 @@ class FlightServiceTest {
     private final RouteRepository routeRepository =
             mock(RouteRepository.class);
 
+    private final AircraftRepository aircraftRepository =
+            mock(AircraftRepository.class);
+
     private final FlightService service =
-            new FlightService(repository, routeRepository);
+            new FlightService(repository, routeRepository, aircraftRepository);
 
 
     @Test
@@ -508,6 +512,102 @@ class FlightServiceTest {
         verify(repository, never()).save(any());
     }
 
+
+    @Test
+    void shouldAssignAircraftToFlight() {
+        Route route = route(10L, airport(1L, "LOWW"), airport(2L, "KJFK"));
+        Flight flight = flightWithStatus(route, FlightStatus.SCHEDULED);
+        ReflectionTestUtils.setField(flight, "id", 1L);
+
+        Aircraft aircraft = aircraft(5L, AircraftStatus.IN_SERVICE);
+
+        when(repository.findById(1L))
+                .thenReturn(Optional.of(flight));
+
+        when(aircraftRepository.findById(5L))
+                .thenReturn(Optional.of(aircraft));
+
+        when(repository.save(any(Flight.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        FlightResponse result = service.assignAircraft(1L, 5L);
+
+        assertThat(result.id()).isEqualTo(1L);
+        assertThat(flight.getAircraft()).isSameAs(aircraft);
+
+        verify(repository).save(flight);
+    }
+
+
+    @Test
+    void shouldThrowWhenFlightDoesNotExistWhenAssigningAircraftToFlight() {
+        when(repository.findById(99L))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                service.assignAircraft(99L, 5L)
+        )
+                .isInstanceOf(FlightNotFoundException.class)
+                .hasMessage("Flight with id: 99 not found");
+
+        verify(aircraftRepository, never()).findById(any());
+        verify(repository, never()).save(any());
+    }
+
+
+    @Test
+    void shouldThrowWhenAircraftDoesNotExist() {
+        Route route = route(10L, airport(1L, "LOWW"), airport(2L, "KJFK"));
+        Flight flight = flightWithStatus(route, FlightStatus.SCHEDULED);
+        ReflectionTestUtils.setField(flight, "id", 1L);
+
+        when(repository.findById(1L))
+                .thenReturn(Optional.of(flight));
+
+        when(aircraftRepository.findById(99L))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                service.assignAircraft(1L, 99L)
+        )
+                .isInstanceOf(AircraftNotFoundException.class)
+                .hasMessage("Aircraft with id 99 not found");
+
+        verify(repository, never()).save(any());
+    }
+
+
+    @Test
+    void shouldThrowWhenAircraftIsNotOperational() {
+        Route route = route(10L, airport(1L, "LOWW"), airport(2L, "KJFK"));
+        Flight flight = flightWithStatus(route, FlightStatus.SCHEDULED);
+        ReflectionTestUtils.setField(flight, "id", 1L);
+
+        Aircraft aircraft = aircraft(5L, AircraftStatus.MAINTENANCE);
+
+        when(repository.findById(1L))
+                .thenReturn(Optional.of(flight));
+
+        when(aircraftRepository.findById(5L))
+                .thenReturn(Optional.of(aircraft));
+
+        assertThatThrownBy(() ->
+                service.assignAircraft(1L, 5L)
+        )
+                .isInstanceOf(AircraftNotOperationalException.class);
+
+        verify(repository, never()).save(any());
+        assertThat(flight.getAircraft()).isNull();
+    }
+
+    private Aircraft aircraft(Long id, AircraftStatus status) {
+        Aircraft aircraft = mock(Aircraft.class);
+        AircraftType aircraftType = mock(AircraftType.class);
+        when(aircraft.getId()).thenReturn(id);
+        when(aircraft.getStatus()).thenReturn(status);
+        when(aircraft.getAircraftType()).thenReturn(aircraftType);
+        return aircraft;
+    }
 
     private Flight flightWithStatus(Route route, FlightStatus status) {
         Flight flight = new Flight(
