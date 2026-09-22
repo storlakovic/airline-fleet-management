@@ -109,4 +109,12 @@ public class Flight {
     public void setAircraft(Aircraft aircraft) {
         this.aircraft = aircraft;
     }
+
+    public void setActualDepartureTime(OffsetDateTime actualDepartureTime) {
+        this.actualDepartureTime = actualDepartureTime;
+    }
+
+    public void setActualArrivalTime(OffsetDateTime actualArrivalTime) {
+        this.actualArrivalTime = actualArrivalTime;
+    }
 }

@@ -211,6 +211,7 @@ public class FlightService {
         }
 
         flight.setAircraft(aircraft);
+        flight.setStatus(FlightStatus.SCHEDULED);
 
         Flight updatedFlight = repository.save(flight);
 
@@ -232,5 +233,33 @@ public class FlightService {
                 updatedFlight.getAircraft() == null ? null : updatedFlight.getAircraft().getAircraftType().getIcaoCode(),
                 updatedFlight.getAircraft() == null ? null : updatedFlight.getAircraft().getRegistration()
         );
+    }
+
+    public void progressFlightStatuses() {
+        OffsetDateTime now = OffsetDateTime.now();
+
+        List<Flight> toBoard = repository.findByStatusAndScheduledDepartureTimeBefore(
+                FlightStatus.SCHEDULED, now.plusMinutes(10)
+        );
+        toBoard.forEach(flight -> flight.setStatus(FlightStatus.BOARDING));
+        repository.saveAll(toBoard);
+
+        List<Flight> toDepart = repository.findByStatusAndScheduledDepartureTimeBefore(
+                FlightStatus.BOARDING, now
+        );
+        toDepart.forEach(flight -> {
+            flight.setStatus(FlightStatus.EN_ROUTE);
+            flight.setActualDepartureTime(now);
+        });
+        repository.saveAll(toDepart);
+
+        List<Flight> toLand = repository.findByStatusAndScheduledArrivalTimeBefore(
+                FlightStatus.EN_ROUTE, now
+        );
+        toLand.forEach(flight -> {
+            flight.setStatus(FlightStatus.LANDED);
+            flight.setActualArrivalTime(now);
+        });
+        repository.saveAll(toLand);
     }
 }

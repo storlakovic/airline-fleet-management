@@ -681,6 +681,134 @@ class FlightServiceTest {
     }
 
 
+    @Test
+    void shouldMoveScheduledFlightToBoardingWithinWindow() {
+        Route route = route(10L, airport(1L, "LOWW"), airport(2L, "KJFK"));
+
+        Flight flight = flightWithStatus(route, FlightStatus.SCHEDULED);
+        ReflectionTestUtils.setField(flight, "id", 1L);
+
+        when(repository.findByStatusAndScheduledDepartureTimeBefore(
+                eq(FlightStatus.SCHEDULED), any(OffsetDateTime.class)))
+                .thenReturn(List.of(flight));
+
+        when(repository.findByStatusAndScheduledDepartureTimeBefore(
+                eq(FlightStatus.BOARDING), any(OffsetDateTime.class)))
+                .thenReturn(List.of());
+
+        when(repository.findByStatusAndScheduledArrivalTimeBefore(
+                eq(FlightStatus.EN_ROUTE), any(OffsetDateTime.class)))
+                .thenReturn(List.of());
+
+        service.progressFlightStatuses();
+
+        assertThat(flight.getStatus()).isEqualTo(FlightStatus.BOARDING);
+        verify(repository).saveAll(List.of(flight));
+    }
+
+
+    @Test
+    void shouldMoveBoardingFlightToEnRoute() {
+        Route route = route(10L, airport(1L, "LOWW"), airport(2L, "KJFK"));
+
+        Flight flight = flightWithStatus(route, FlightStatus.BOARDING);
+        ReflectionTestUtils.setField(flight, "id", 1L);
+
+        when(repository.findByStatusAndScheduledDepartureTimeBefore(
+                eq(FlightStatus.SCHEDULED), any(OffsetDateTime.class)))
+                .thenReturn(List.of());
+
+        when(repository.findByStatusAndScheduledDepartureTimeBefore(
+                eq(FlightStatus.BOARDING), any(OffsetDateTime.class)))
+                .thenReturn(List.of(flight));
+
+        when(repository.findByStatusAndScheduledArrivalTimeBefore(
+                eq(FlightStatus.EN_ROUTE), any(OffsetDateTime.class)))
+                .thenReturn(List.of());
+
+        service.progressFlightStatuses();
+
+        assertThat(flight.getStatus()).isEqualTo(FlightStatus.EN_ROUTE);
+        assertThat(flight.getActualDepartureTime()).isNotNull();
+        verify(repository).saveAll(List.of(flight));
+    }
+
+
+    @Test
+    void shouldMoveEnRouteFlightToLanded() {
+        Route route = route(10L, airport(1L, "LOWW"), airport(2L, "KJFK"));
+
+        Flight flight = flightWithStatus(route, FlightStatus.EN_ROUTE);
+        ReflectionTestUtils.setField(flight, "id", 1L);
+
+        when(repository.findByStatusAndScheduledDepartureTimeBefore(
+                eq(FlightStatus.SCHEDULED), any(OffsetDateTime.class)))
+                .thenReturn(List.of());
+
+        when(repository.findByStatusAndScheduledDepartureTimeBefore(
+                eq(FlightStatus.BOARDING), any(OffsetDateTime.class)))
+                .thenReturn(List.of());
+
+        when(repository.findByStatusAndScheduledArrivalTimeBefore(
+                eq(FlightStatus.EN_ROUTE), any(OffsetDateTime.class)))
+                .thenReturn(List.of(flight));
+
+        service.progressFlightStatuses();
+
+        assertThat(flight.getStatus()).isEqualTo(FlightStatus.LANDED);
+        assertThat(flight.getActualArrivalTime()).isNotNull();
+        verify(repository).saveAll(List.of(flight));
+    }
+
+
+    @Test
+    void shouldDoNothingWhenNoFlightsMatch() {
+        when(repository.findByStatusAndScheduledDepartureTimeBefore(
+                eq(FlightStatus.SCHEDULED), any(OffsetDateTime.class)))
+                .thenReturn(List.of());
+
+        when(repository.findByStatusAndScheduledDepartureTimeBefore(
+                eq(FlightStatus.BOARDING), any(OffsetDateTime.class)))
+                .thenReturn(List.of());
+
+        when(repository.findByStatusAndScheduledArrivalTimeBefore(
+                eq(FlightStatus.EN_ROUTE), any(OffsetDateTime.class)))
+                .thenReturn(List.of());
+
+        service.progressFlightStatuses();
+
+        verify(repository, times(3)).saveAll(List.of());
+    }
+
+
+    @Test
+    void shouldQueryBoardingWindowTenMinutesAhead() {
+        when(repository.findByStatusAndScheduledDepartureTimeBefore(
+                eq(FlightStatus.SCHEDULED), any(OffsetDateTime.class)))
+                .thenReturn(List.of());
+
+        when(repository.findByStatusAndScheduledDepartureTimeBefore(
+                eq(FlightStatus.BOARDING), any(OffsetDateTime.class)))
+                .thenReturn(List.of());
+
+        when(repository.findByStatusAndScheduledArrivalTimeBefore(
+                eq(FlightStatus.EN_ROUTE), any(OffsetDateTime.class)))
+                .thenReturn(List.of());
+
+        OffsetDateTime before = OffsetDateTime.now();
+
+        service.progressFlightStatuses();
+
+        ArgumentCaptor<OffsetDateTime> captor = ArgumentCaptor.forClass(OffsetDateTime.class);
+        verify(repository).findByStatusAndScheduledDepartureTimeBefore(eq(FlightStatus.SCHEDULED), captor.capture());
+
+        OffsetDateTime capturedThreshold = captor.getValue();
+
+        assertThat(capturedThreshold).isAfter(before.plusMinutes(9));
+        assertThat(capturedThreshold).isBefore(before.plusMinutes(11));
+    }
+
+
     private Flight flightWithTimes(Route route, OffsetDateTime departure, OffsetDateTime arrival) {
         return new Flight("OS123", route, departure, arrival);
     }
