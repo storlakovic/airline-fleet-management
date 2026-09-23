@@ -8,10 +8,10 @@ import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftType;
 import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftTypeRepository;
 import com.storlakovic.airlineoperationssimulator.airport.Airport;
 import com.storlakovic.airlineoperationssimulator.airport.AirportStatus;
-import com.storlakovic.airlineoperationssimulator.common.AircraftAlreadyExistsException;
-import com.storlakovic.airlineoperationssimulator.common.AircraftDeletionNotAllowedException;
-import com.storlakovic.airlineoperationssimulator.common.AircraftNotFoundException;
-import com.storlakovic.airlineoperationssimulator.common.AircraftStatusTransitionException;
+import com.storlakovic.airlineoperationssimulator.aircraft.exceptions.AircraftAlreadyExistsException;
+import com.storlakovic.airlineoperationssimulator.aircraft.exceptions.AircraftDeletionNotAllowedException;
+import com.storlakovic.airlineoperationssimulator.aircraft.exceptions.AircraftNotFoundException;
+import com.storlakovic.airlineoperationssimulator.aircraft.exceptions.AircraftStatusTransitionException;
 
 import com.storlakovic.airlineoperationssimulator.flight.Flight;
 import com.storlakovic.airlineoperationssimulator.flight.FlightRepository;

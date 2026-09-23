@@ -7,9 +7,9 @@ import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftResponse;
 import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftUpdateRequest;
 import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftType;
 import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftTypeRepository;
-import com.storlakovic.airlineoperationssimulator.common.AircraftAlreadyExistsException;
-import com.storlakovic.airlineoperationssimulator.common.AircraftDeletionNotAllowedException;
-import com.storlakovic.airlineoperationssimulator.common.AircraftNotFoundException;
+import com.storlakovic.airlineoperationssimulator.aircraft.exceptions.AircraftAlreadyExistsException;
+import com.storlakovic.airlineoperationssimulator.aircraft.exceptions.AircraftDeletionNotAllowedException;
+import com.storlakovic.airlineoperationssimulator.aircraft.exceptions.AircraftNotFoundException;
 import com.storlakovic.airlineoperationssimulator.flight.FlightRepository;
 import org.springframework.stereotype.Service;
 
