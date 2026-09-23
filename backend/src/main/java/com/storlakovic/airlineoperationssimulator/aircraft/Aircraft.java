@@ -1,6 +1,5 @@
 package com.storlakovic.airlineoperationssimulator.aircraft;
 
-
 import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftType;
 import jakarta.persistence.*;
 import com.storlakovic.airlineoperationssimulator.common.AircraftStatusTransitionException;

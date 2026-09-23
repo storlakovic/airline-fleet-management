@@ -45,25 +45,18 @@ public class AircraftService {
 
         Aircraft savedAircraft = aircraftRepository.save(aircraft);
 
-        return new AircraftResponse(
-                savedAircraft.getId(),
-                savedAircraft.getRegistration(),
-                savedAircraft.getAircraftType().getId(),
-                savedAircraft.getAircraftType().getModel(),
-                savedAircraft.getAircraftType().getIcaoCode(),
-                savedAircraft.getStatus()
-        );
+        return AircraftResponse.from(savedAircraft);
     }
 
     public List<AircraftResponse> getAll() {
-        return aircraftRepository.findAll().stream().map(aircraft -> new AircraftResponse(aircraft.getId(), aircraft.getRegistration(), aircraft.getAircraftType().getId(), aircraft.getAircraftType().getModel(), aircraft.getAircraftType().getIcaoCode(), aircraft.getStatus())).toList();
+        return aircraftRepository.findAll().stream().map(AircraftResponse::from).toList();
     }
 
     public AircraftDetailsResponse getAircraftById(Long id) {
         Aircraft aircraft = aircraftRepository.findById(id).orElseThrow(() -> new AircraftNotFoundException(
                 "Aircraft with id " + id + " not found"
         ));
-        return new AircraftDetailsResponse(aircraft.getId(), aircraft.getRegistration(), aircraft.getAircraftType().getId(), aircraft.getAircraftType().getModel(), aircraft.getAircraftType().getIcaoCode(), aircraft.getAircraftType().getManufacturer(), aircraft.getStatus()) ;
+        return AircraftDetailsResponse.from(aircraft);
     }
 
     public AircraftResponse updateAircraft(Long aircraftId, AircraftUpdateRequest request) {
@@ -73,14 +66,7 @@ public class AircraftService {
 
         Aircraft savedAircraft = aircraftRepository.save(aircraft);
 
-        return new AircraftResponse(
-                savedAircraft.getId(),
-                savedAircraft.getRegistration(),
-                savedAircraft.getAircraftType().getId(),
-                savedAircraft.getAircraftType().getModel(),
-                savedAircraft.getAircraftType().getIcaoCode(),
-                savedAircraft.getStatus()
-        );
+        return AircraftResponse.from(savedAircraft);
     }
 
     public void deleteAircraft(Long id) {

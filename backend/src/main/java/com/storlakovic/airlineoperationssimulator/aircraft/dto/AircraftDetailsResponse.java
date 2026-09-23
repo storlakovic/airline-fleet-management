@@ -1,5 +1,6 @@
 package com.storlakovic.airlineoperationssimulator.aircraft.dto;
 
+import com.storlakovic.airlineoperationssimulator.aircraft.Aircraft;
 import com.storlakovic.airlineoperationssimulator.aircraft.AircraftStatus;
 
 public class AircraftDetailsResponse {
@@ -47,5 +48,9 @@ public class AircraftDetailsResponse {
 
     public AircraftStatus getStatus() {
         return status;
+    }
+
+    public static AircraftDetailsResponse from(Aircraft aircraft) {
+        return new AircraftDetailsResponse(aircraft.getId(), aircraft.getRegistration(), aircraft.getAircraftType().getId(), aircraft.getAircraftType().getModel(), aircraft.getAircraftType().getIcaoCode(), aircraft.getAircraftType().getManufacturer(), aircraft.getStatus()) ;
     }
 }
