@@ -30,17 +30,17 @@ public class AircraftService {
 
 
     public AircraftResponse addAircraftToFleet(AircraftCreateRequest request) {
-        if (aircraftRepository.existsAircraftByRegistration((request.getRegistration()))){
+        if (aircraftRepository.existsAircraftByRegistration((request.registration()))){
             throw new AircraftAlreadyExistsException(
-                    "Aircraft with registration " + request.getRegistration() + " already exists"
+                    "Aircraft with registration " + request.registration() + " already exists"
             );
         }
 
-        AircraftType aircraftType = aircraftTypeRepository.findById(request.getAircraftTypeId()).orElseThrow();
+        AircraftType aircraftType = aircraftTypeRepository.findById(request.aircraftTypeId()).orElseThrow();
 
         Aircraft aircraft = new Aircraft(
                 aircraftType,
-                request.getRegistration()
+                request.registration()
         );
 
         Aircraft savedAircraft = aircraftRepository.save(aircraft);
@@ -62,7 +62,7 @@ public class AircraftService {
     public AircraftResponse updateAircraft(Long aircraftId, AircraftUpdateRequest request) {
         Aircraft aircraft = aircraftRepository.findById(aircraftId).orElseThrow(() -> new AircraftNotFoundException("Aircraft with id " + aircraftId + " not found"));
 
-        aircraft.changeStatus(request.getStatus());
+        aircraft.changeStatus(request.status());
 
         Aircraft savedAircraft = aircraftRepository.save(aircraft);
 
