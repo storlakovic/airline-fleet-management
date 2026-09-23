@@ -6,6 +6,7 @@ import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftResponse;
 import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftUpdateRequest;
 import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftType;
 import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftTypeRepository;
+import com.storlakovic.airlineoperationssimulator.aircrafttype.exceptions.AircraftTypeNotFoundException;
 import com.storlakovic.airlineoperationssimulator.airport.Airport;
 import com.storlakovic.airlineoperationssimulator.airport.AirportStatus;
 import com.storlakovic.airlineoperationssimulator.aircraft.exceptions.AircraftAlreadyExistsException;
@@ -23,7 +24,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -129,7 +129,7 @@ class AircraftServiceTest {
 
         assertThatThrownBy(() ->
                 service.addAircraftToFleet(request)
-        ).isInstanceOf(NoSuchElementException.class);
+        ).isInstanceOf(AircraftTypeNotFoundException.class);
 
         verify(repository, never())
                 .save(any(Aircraft.class));
