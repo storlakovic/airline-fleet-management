@@ -10,6 +10,7 @@ import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftTypeRepos
 import com.storlakovic.airlineoperationssimulator.aircraft.exceptions.AircraftAlreadyExistsException;
 import com.storlakovic.airlineoperationssimulator.aircraft.exceptions.AircraftDeletionNotAllowedException;
 import com.storlakovic.airlineoperationssimulator.aircraft.exceptions.AircraftNotFoundException;
+import com.storlakovic.airlineoperationssimulator.aircrafttype.exceptions.AircraftTypeNotFoundException;
 import com.storlakovic.airlineoperationssimulator.flight.FlightRepository;
 import org.springframework.stereotype.Service;
 
@@ -36,7 +37,9 @@ public class AircraftService {
             );
         }
 
-        AircraftType aircraftType = aircraftTypeRepository.findById(request.aircraftTypeId()).orElseThrow();
+        AircraftType aircraftType = aircraftTypeRepository.findById(request.aircraftTypeId()).orElseThrow(() -> new AircraftTypeNotFoundException(
+                "Aircraft with id " + request.aircraftTypeId() + " not found"
+        ));
 
         Aircraft aircraft = new Aircraft(
                 aircraftType,
@@ -73,8 +76,14 @@ public class AircraftService {
         if(!aircraftRepository.existsById(id)){
             throw new AircraftNotFoundException("Aircraft with id " + id + " not found");
         }
-        if(!flightRepository.findByAircraft_Id(id).isEmpty()){
-            throw new AircraftDeletionNotAllowedException("Aircraft with id " + id + " cannot be deleted, because it is assigned to an active flight");
+        boolean hasBlockingFlight = flightRepository.findByAircraft_Id(id)
+                .stream()
+                .anyMatch(flight -> flight.getStatus().blocksAircraftDeletion());
+
+        if (hasBlockingFlight) {
+            throw new AircraftDeletionNotAllowedException(
+                    "Aircraft with id " + id + " cannot be deleted, because it is assigned to an active flight"
+            );
         }
         aircraftRepository.deleteById(id);
     }
