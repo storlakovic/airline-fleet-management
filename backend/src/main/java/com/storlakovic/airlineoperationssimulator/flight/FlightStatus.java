@@ -8,5 +8,9 @@ public enum FlightStatus {
     LANDED,
     DELAYED,
     CANCELLED,
-    UNKNOWN
+    UNKNOWN;
+
+    public boolean blocksAircraftDeletion() {
+        return this != CANCELLED && this != UNKNOWN;
+    }
 }

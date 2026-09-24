@@ -1,4 +1,4 @@
-package com.storlakovic.airlineoperationssimulator.common;
+package com.storlakovic.airlineoperationssimulator.aircraft.exceptions;
 
 public class AircraftStatusTransitionException extends RuntimeException {
     public AircraftStatusTransitionException(String message) {

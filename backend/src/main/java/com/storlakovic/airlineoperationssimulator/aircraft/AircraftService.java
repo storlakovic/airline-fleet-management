@@ -7,9 +7,10 @@ import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftResponse;
 import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftUpdateRequest;
 import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftType;
 import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftTypeRepository;
-import com.storlakovic.airlineoperationssimulator.common.AircraftAlreadyExistsException;
-import com.storlakovic.airlineoperationssimulator.common.AircraftDeletionNotAllowedException;
-import com.storlakovic.airlineoperationssimulator.common.AircraftNotFoundException;
+import com.storlakovic.airlineoperationssimulator.aircraft.exceptions.AircraftAlreadyExistsException;
+import com.storlakovic.airlineoperationssimulator.aircraft.exceptions.AircraftDeletionNotAllowedException;
+import com.storlakovic.airlineoperationssimulator.aircraft.exceptions.AircraftNotFoundException;
+import com.storlakovic.airlineoperationssimulator.aircrafttype.exceptions.AircraftTypeNotFoundException;
 import com.storlakovic.airlineoperationssimulator.flight.FlightRepository;
 import org.springframework.stereotype.Service;
 
@@ -30,65 +31,59 @@ public class AircraftService {
 
 
     public AircraftResponse addAircraftToFleet(AircraftCreateRequest request) {
-        if (aircraftRepository.existsAircraftByRegistration((request.getRegistration()))){
+        if (aircraftRepository.existsAircraftByRegistration((request.registration()))){
             throw new AircraftAlreadyExistsException(
-                    "Aircraft with registration " + request.getRegistration() + " already exists"
+                    "Aircraft with registration " + request.registration() + " already exists"
             );
         }
 
-        AircraftType aircraftType = aircraftTypeRepository.findById(request.getAircraftTypeId()).orElseThrow();
+        AircraftType aircraftType = aircraftTypeRepository.findById(request.aircraftTypeId()).orElseThrow(() -> new AircraftTypeNotFoundException(
+                "Aircraft with id " + request.aircraftTypeId() + " not found"
+        ));
 
         Aircraft aircraft = new Aircraft(
                 aircraftType,
-                request.getRegistration()
+                request.registration()
         );
 
         Aircraft savedAircraft = aircraftRepository.save(aircraft);
 
-        return new AircraftResponse(
-                savedAircraft.getId(),
-                savedAircraft.getRegistration(),
-                savedAircraft.getAircraftType().getId(),
-                savedAircraft.getAircraftType().getModel(),
-                savedAircraft.getAircraftType().getIcaoCode(),
-                savedAircraft.getStatus()
-        );
+        return AircraftResponse.from(savedAircraft);
     }
 
     public List<AircraftResponse> getAll() {
-        return aircraftRepository.findAll().stream().map(aircraft -> new AircraftResponse(aircraft.getId(), aircraft.getRegistration(), aircraft.getAircraftType().getId(), aircraft.getAircraftType().getModel(), aircraft.getAircraftType().getIcaoCode(), aircraft.getStatus())).toList();
+        return aircraftRepository.findAll().stream().map(AircraftResponse::from).toList();
     }
 
     public AircraftDetailsResponse getAircraftById(Long id) {
         Aircraft aircraft = aircraftRepository.findById(id).orElseThrow(() -> new AircraftNotFoundException(
                 "Aircraft with id " + id + " not found"
         ));
-        return new AircraftDetailsResponse(aircraft.getId(), aircraft.getRegistration(), aircraft.getAircraftType().getId(), aircraft.getAircraftType().getModel(), aircraft.getAircraftType().getIcaoCode(), aircraft.getAircraftType().getManufacturer(), aircraft.getStatus()) ;
+        return AircraftDetailsResponse.from(aircraft);
     }
 
     public AircraftResponse updateAircraft(Long aircraftId, AircraftUpdateRequest request) {
         Aircraft aircraft = aircraftRepository.findById(aircraftId).orElseThrow(() -> new AircraftNotFoundException("Aircraft with id " + aircraftId + " not found"));
 
-        aircraft.changeStatus(request.getStatus());
+        aircraft.changeStatus(request.status());
 
         Aircraft savedAircraft = aircraftRepository.save(aircraft);
 
-        return new AircraftResponse(
-                savedAircraft.getId(),
-                savedAircraft.getRegistration(),
-                savedAircraft.getAircraftType().getId(),
-                savedAircraft.getAircraftType().getModel(),
-                savedAircraft.getAircraftType().getIcaoCode(),
-                savedAircraft.getStatus()
-        );
+        return AircraftResponse.from(savedAircraft);
     }
 
     public void deleteAircraft(Long id) {
         if(!aircraftRepository.existsById(id)){
             throw new AircraftNotFoundException("Aircraft with id " + id + " not found");
         }
-        if(!flightRepository.findByAircraft_Id(id).isEmpty()){
-            throw new AircraftDeletionNotAllowedException("Aircraft with id " + id + " cannot be deleted, because it is assigned to an active flight");
+        boolean hasBlockingFlight = flightRepository.findByAircraft_Id(id)
+                .stream()
+                .anyMatch(flight -> flight.getStatus().blocksAircraftDeletion());
+
+        if (hasBlockingFlight) {
+            throw new AircraftDeletionNotAllowedException(
+                    "Aircraft with id " + id + " cannot be deleted, because it is assigned to an active flight"
+            );
         }
         aircraftRepository.deleteById(id);
     }

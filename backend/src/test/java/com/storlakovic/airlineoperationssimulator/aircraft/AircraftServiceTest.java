@@ -6,12 +6,13 @@ import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftResponse;
 import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftUpdateRequest;
 import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftType;
 import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftTypeRepository;
+import com.storlakovic.airlineoperationssimulator.aircrafttype.exceptions.AircraftTypeNotFoundException;
 import com.storlakovic.airlineoperationssimulator.airport.Airport;
 import com.storlakovic.airlineoperationssimulator.airport.AirportStatus;
-import com.storlakovic.airlineoperationssimulator.common.AircraftAlreadyExistsException;
-import com.storlakovic.airlineoperationssimulator.common.AircraftDeletionNotAllowedException;
-import com.storlakovic.airlineoperationssimulator.common.AircraftNotFoundException;
-import com.storlakovic.airlineoperationssimulator.common.AircraftStatusTransitionException;
+import com.storlakovic.airlineoperationssimulator.aircraft.exceptions.AircraftAlreadyExistsException;
+import com.storlakovic.airlineoperationssimulator.aircraft.exceptions.AircraftDeletionNotAllowedException;
+import com.storlakovic.airlineoperationssimulator.aircraft.exceptions.AircraftNotFoundException;
+import com.storlakovic.airlineoperationssimulator.aircraft.exceptions.AircraftStatusTransitionException;
 
 import com.storlakovic.airlineoperationssimulator.flight.Flight;
 import com.storlakovic.airlineoperationssimulator.flight.FlightRepository;
@@ -23,7 +24,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -78,16 +78,16 @@ class AircraftServiceTest {
         AircraftResponse result =
                 service.addAircraftToFleet(request);
 
-        assertThat(result.getId())
+        assertThat(result.id())
                 .isEqualTo(10L);
 
-        assertThat(result.getRegistration())
+        assertThat(result.registration())
                 .isEqualTo("OE-LBA");
 
-        assertThat(result.getAircraftTypeId())
+        assertThat(result.aircraftTypeId())
                 .isEqualTo(1L);
 
-        assertThat(result.getStatus())
+        assertThat(result.status())
                 .isEqualTo(AircraftStatus.IN_SERVICE);
     }
 
@@ -114,7 +114,7 @@ class AircraftServiceTest {
         AircraftResponse result =
                 service.addAircraftToFleet(request);
 
-        assertThat(result.getStatus())
+        assertThat(result.status())
                 .isEqualTo(AircraftStatus.IN_SERVICE);
     }
 
@@ -129,7 +129,7 @@ class AircraftServiceTest {
 
         assertThatThrownBy(() ->
                 service.addAircraftToFleet(request)
-        ).isInstanceOf(NoSuchElementException.class);
+        ).isInstanceOf(AircraftTypeNotFoundException.class);
 
         verify(repository, never())
                 .save(any(Aircraft.class));
@@ -215,16 +215,16 @@ class AircraftServiceTest {
         AircraftResponse response =
                 result.getFirst();
 
-        assertThat(response.getId())
+        assertThat(response.id())
                 .isEqualTo(1L);
 
-        assertThat(response.getRegistration())
+        assertThat(response.registration())
                 .isEqualTo("OE-LBA");
 
-        assertThat(response.getAircraftTypeId())
+        assertThat(response.aircraftTypeId())
                 .isEqualTo(5L);
 
-        assertThat(response.getStatus())
+        assertThat(response.status())
                 .isEqualTo(AircraftStatus.IN_SERVICE);
     }
 
@@ -272,7 +272,7 @@ class AircraftServiceTest {
                 service.getAll();
 
         assertThat(result)
-                .extracting(AircraftResponse::getRegistration)
+                .extracting(AircraftResponse::registration)
                 .containsExactly("OE-LBA", "OE-LBB");
     }
 
@@ -300,25 +300,25 @@ class AircraftServiceTest {
         AircraftDetailsResponse result =
                 service.getAircraftById(1L);
 
-        assertThat(result.getId())
+        assertThat(result.id())
                 .isEqualTo(1L);
 
-        assertThat(result.getRegistration())
+        assertThat(result.registration())
                 .isEqualTo("OE-LBA");
 
-        assertThat(result.getStatus())
+        assertThat(result.status())
                 .isEqualTo(AircraftStatus.IN_SERVICE);
 
-        assertThat(result.getAircraftTypeId())
+        assertThat(result.aircraftTypeId())
                 .isEqualTo(5L);
 
-        assertThat(result.getManufacturer())
+        assertThat(result.manufacturer())
                 .isEqualTo("AIRBUS");
 
-        assertThat(result.getAircraftTypeModel())
+        assertThat(result.aircraftTypeModel())
                 .isEqualTo("Airbus A320");
 
-        assertThat(result.getIcaoCode())
+        assertThat(result.icaoCode())
                 .isEqualTo("A320");
     }
 
@@ -362,7 +362,7 @@ class AircraftServiceTest {
                         new AircraftUpdateRequest(AircraftStatus.MAINTENANCE)
                 );
 
-        assertThat(result.getStatus())
+        assertThat(result.status())
                 .isEqualTo(AircraftStatus.MAINTENANCE);
 
         verify(repository).save(aircraft);
