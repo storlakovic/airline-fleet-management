@@ -3,10 +3,10 @@ package com.storlakovic.airlineoperationssimulator.route;
 import com.storlakovic.airlineoperationssimulator.airport.Airport;
 import com.storlakovic.airlineoperationssimulator.airport.AirportRepository;
 import com.storlakovic.airlineoperationssimulator.airport.exceptions.AirportNotFoundException;
-import com.storlakovic.airlineoperationssimulator.common.RouteAlreadyExistsException;
-import com.storlakovic.airlineoperationssimulator.common.RouteInvalidException;
 import com.storlakovic.airlineoperationssimulator.route.dto.RouteCreateRequest;
 import com.storlakovic.airlineoperationssimulator.route.dto.RouteResponse;
+import com.storlakovic.airlineoperationssimulator.route.exceptions.RouteAlreadyExistsException;
+import com.storlakovic.airlineoperationssimulator.route.exceptions.RouteInvalidException;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -21,17 +21,17 @@ public class RouteService {
     }
 
     public RouteResponse addRoute(RouteCreateRequest request) {
-        if (request.getDestinationAirportId().equals(request.getOriginAirportId())) {
+        if (request.destinationAirportId().equals(request.originAirportId())) {
             throw new RouteInvalidException("Origin and destination must not be the same");
         }
-        Airport origin = airportRepository.findById(request.getOriginAirportId()).orElseThrow(() -> new AirportNotFoundException("Could not find airport with id: " + request.getOriginAirportId()));
-        Airport destination = airportRepository.findById(request.getDestinationAirportId()).orElseThrow(() -> new AirportNotFoundException("Could not find airport with id: " + request.getDestinationAirportId()));
+        Airport origin = airportRepository.findById(request.originAirportId()).orElseThrow(() -> new AirportNotFoundException("Could not find airport with id: " + request.originAirportId()));
+        Airport destination = airportRepository.findById(request.destinationAirportId()).orElseThrow(() -> new AirportNotFoundException("Could not find airport with id: " + request.destinationAirportId()));
 
-        if(routeRepository.existsByOrigin_IdAndDestination_Id(request.getOriginAirportId(), request.getDestinationAirportId())) {
+        if(routeRepository.existsByOrigin_IdAndDestination_Id(request.originAirportId(), request.destinationAirportId())) {
             throw new RouteAlreadyExistsException("Route already exists");
         }
         Route newRoute = routeRepository.save(new Route(origin,destination));
 
-        return new RouteResponse(newRoute.getId(), newRoute.getOrigin().getId(), newRoute.getOrigin().getIcaoCode(), newRoute.getDestination().getId(), newRoute.getDestination().getIcaoCode());
+        return RouteResponse.from(newRoute);
     }
 }

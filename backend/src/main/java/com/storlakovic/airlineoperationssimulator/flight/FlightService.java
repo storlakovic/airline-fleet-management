@@ -12,6 +12,7 @@ import com.storlakovic.airlineoperationssimulator.flight.dto.FlightDetailedRespo
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightResponse;
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightUpdateRequest;
 import com.storlakovic.airlineoperationssimulator.route.Route;
+import com.storlakovic.airlineoperationssimulator.route.exceptions.RouteNotFoundException;
 import com.storlakovic.airlineoperationssimulator.route.RouteRepository;
 import com.storlakovic.airlineoperationssimulator.route.dto.RouteResponse;
 import org.springframework.stereotype.Service;
