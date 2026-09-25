@@ -207,12 +207,12 @@ class AircraftTypeServiceTest {
         List<AircraftType> aircraftTypes =
                 service.readAircraftTypes(resource);
 
-        List<AircraftType> result =
+        List<AircraftTypeResponse> result =
                 service.saveNewAircraftTypes(aircraftTypes);
 
         assertThat(result).hasSize(1);
 
-        assertThat(result.getFirst().getIcaoCode())
+        assertThat(result.getFirst().icaoCode())
                 .isEqualTo("B738");
     }
 
@@ -264,16 +264,16 @@ class AircraftTypeServiceTest {
         AircraftTypeResponse response =
                 result.getFirst();
 
-        assertThat(response.getId())
+        assertThat(response.id())
                 .isEqualTo(5L);
 
-        assertThat(response.getManufacturer())
+        assertThat(response.manufacturer())
                 .isEqualTo("AIRBUS");
 
-        assertThat(response.getModel())
+        assertThat(response.model())
                 .isEqualTo("Airbus A320");
 
-        assertThat(response.getIcaoCode())
+        assertThat(response.icaoCode())
                 .isEqualTo("A320");
     }
 
@@ -315,7 +315,7 @@ class AircraftTypeServiceTest {
                 service.getAll();
 
         assertThat(result)
-                .extracting(AircraftTypeResponse::getIcaoCode)
+                .extracting(AircraftTypeResponse::icaoCode)
                 .containsExactly("A320", "B738");
     }
 

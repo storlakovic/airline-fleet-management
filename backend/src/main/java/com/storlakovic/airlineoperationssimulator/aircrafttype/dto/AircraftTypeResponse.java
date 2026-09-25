@@ -1,31 +1,15 @@
 package com.storlakovic.airlineoperationssimulator.aircrafttype.dto;
 
-public class AircraftTypeResponse {
-    private final Long id;
-    private final String manufacturer;
-    private final String model;
-    private final String icaoCode;
+import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftType;
 
-    public AircraftTypeResponse(Long id, String manufacturer, String model, String icaoCode) {
-        this.id = id;
-        this.manufacturer = manufacturer;
-        this.model = model;
-        this.icaoCode = icaoCode;
-    }
+public record AircraftTypeResponse(Long id, String manufacturer, String model, String icaoCode) {
 
-    public Long getId() {
-        return id;
-    }
-
-    public String getManufacturer() {
-        return manufacturer;
-    }
-
-    public String getModel() {
-        return model;
-    }
-
-    public String getIcaoCode() {
-        return icaoCode;
+    public static AircraftTypeResponse from(AircraftType aircraftType) {
+        return new AircraftTypeResponse(
+                aircraftType.getId(),
+                aircraftType.getManufacturer(),
+                aircraftType.getModel(),
+                aircraftType.getIcaoCode()
+        );
     }
 }
