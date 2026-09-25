@@ -97,7 +97,7 @@ public class AirportService {
     public AirportResponse updateAirport(Long id, AirportUpdateRequest request) {
         Airport airport = repository.findById(id).orElseThrow(() -> new AirportNotFoundException("Airport with id: " + id + " does not exist"));
 
-        airport.setStatus(request.getStatus());
+        airport.setStatus(request.status());
 
         Airport newAirport = repository.save(airport);
 
