@@ -15,6 +15,7 @@ import com.storlakovic.airlineoperationssimulator.flight.dto.FlightDetailedRespo
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightResponse;
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightUpdateRequest;
 import com.storlakovic.airlineoperationssimulator.route.Route;
+import com.storlakovic.airlineoperationssimulator.route.exceptions.RouteNotFoundException;
 import com.storlakovic.airlineoperationssimulator.route.RouteRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;

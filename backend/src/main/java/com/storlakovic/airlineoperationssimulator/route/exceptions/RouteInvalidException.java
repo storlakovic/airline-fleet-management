@@ -1,4 +1,4 @@
-package com.storlakovic.airlineoperationssimulator.common;
+package com.storlakovic.airlineoperationssimulator.route.exceptions;
 
 public class RouteInvalidException extends RuntimeException {
     public RouteInvalidException(String message) {
