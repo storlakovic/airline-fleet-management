@@ -128,10 +128,10 @@ class AirportServiceTest {
         when(repository.saveAll(anyList()))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        List<Airport> result = service.saveNewAirports(List.of(existing, newAirport));
+        List<AirportResponse> result = service.saveNewAirports(List.of(existing, newAirport));
 
         assertThat(result).hasSize(1);
-        assertThat(result.getFirst().getIcaoCode()).isEqualTo("LOWL");
+        assertThat(result.getFirst().icaoCode()).isEqualTo("LOWL");
     }
 
 
@@ -144,7 +144,7 @@ class AirportServiceTest {
         when(repository.existsByIcaoCode("LOWL")).thenReturn(false);
         when(repository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        List<Airport> result = service.saveNewAirports(List.of(vienna, linz));
+        List<AirportResponse> result = service.saveNewAirports(List.of(vienna, linz));
 
         assertThat(result).hasSize(2);
         verify(repository).saveAll(List.of(vienna, linz));

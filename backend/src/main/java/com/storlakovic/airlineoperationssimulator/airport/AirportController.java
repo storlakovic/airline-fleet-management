@@ -18,7 +18,7 @@ public class AirportController {
     }
 
     @PostMapping(path = "/import")
-    public List<Airport> addAirports() {
+    public List<AirportResponse> addAirports() {
         return airportService.importAirports();
     }
 

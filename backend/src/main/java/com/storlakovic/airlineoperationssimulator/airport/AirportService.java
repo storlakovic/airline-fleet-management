@@ -28,7 +28,7 @@ public class AirportService {
     }
 
 
-    public List<Airport> importAirports() {
+    public List<AirportResponse> importAirports() {
         try {
             List<Airport> airports = loadAirports();
             return saveNewAirports(airports);
@@ -87,11 +87,11 @@ public class AirportService {
         return airports;
     }
 
-    public List<Airport> saveNewAirports(List<Airport> airports) {
+    public List<AirportResponse> saveNewAirports(List<Airport> airports) {
         List<Airport> newAirports = airports.stream()
                 .filter(a -> !repository.existsByIcaoCode(a.getIcaoCode()))
                 .toList();
-        return repository.saveAll(newAirports);
+        return repository.saveAll(newAirports).stream().map(AirportResponse::from).toList();
     }
 
     public AirportResponse updateAirport(Long id, AirportUpdateRequest request) {
@@ -101,11 +101,11 @@ public class AirportService {
 
         Airport newAirport = repository.save(airport);
 
-        return new AirportResponse(newAirport.getId(), newAirport.getIcaoCode(), newAirport.getIataCode(), newAirport.getName(), newAirport.getType(), newAirport.getStatus());
+        return AirportResponse.from(newAirport);
     }
 
     public AirportDetailsResponse getAirport(Long id) {
         Airport airport = repository.findById(id).orElseThrow(() -> new AirportNotFoundException("Airport with id: " + id + " does not exist"));
-        return new AirportDetailsResponse(airport.getId(), airport.getIcaoCode(), airport.getIataCode(), airport.getName(), airport.getCity(), airport.getCountryCode(), airport.getLatitude(), airport.getLongitude(), airport.getType(), airport.getStatus());
+        return  AirportDetailsResponse.from(airport);
     }
 }
