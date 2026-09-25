@@ -1,7 +1,7 @@
 package com.storlakovic.airlineoperationssimulator.aircrafttype;
 
 import com.storlakovic.airlineoperationssimulator.aircrafttype.dto.AircraftTypeResponse;
-import com.storlakovic.airlineoperationssimulator.common.AircraftTypeImportException;
+import com.storlakovic.airlineoperationssimulator.aircrafttype.exceptions.AircraftTypeImportException;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 import org.springframework.core.io.ClassPathResource;
