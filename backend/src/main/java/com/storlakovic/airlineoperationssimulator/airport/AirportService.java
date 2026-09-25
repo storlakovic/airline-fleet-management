@@ -66,6 +66,9 @@ public class AirportService {
                     .parse(reader);
 
             for (CSVRecord record : records) {
+                if(record.get("latitude_deg").isBlank() || record.get("longitude_deg").isBlank() || record.get("icao_code").isBlank() || record.get("name").isBlank() || record.get("iso_country").isBlank() || record.get("type").isBlank()){
+                    continue;
+                }
                 Airport airport = new Airport(
                         record.get("icao_code"),
                         record.get("iata_code"),
@@ -77,10 +80,7 @@ public class AirportService {
                         record.get("type"),
                         AirportStatus.OPERATIONAL
                 );
-                if(!record.get("icao_code").isEmpty() && !record.get("name").isEmpty() && !record.get("iso_country").isEmpty() && !record.get("latitude_deg").isEmpty() && !record.get("longitude_deg").isEmpty() && !record.get("type").isEmpty()){
-                    airports.add(airport);
-                }
-
+                airports.add(airport);
             }
         }
 
