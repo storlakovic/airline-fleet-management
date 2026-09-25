@@ -3,7 +3,7 @@ package com.storlakovic.airlineoperationssimulator.route;
 import com.storlakovic.airlineoperationssimulator.airport.Airport;
 import com.storlakovic.airlineoperationssimulator.airport.AirportRepository;
 import com.storlakovic.airlineoperationssimulator.airport.AirportStatus;
-import com.storlakovic.airlineoperationssimulator.common.AirportNotFoundException;
+import com.storlakovic.airlineoperationssimulator.airport.exceptions.AirportNotFoundException;
 import com.storlakovic.airlineoperationssimulator.common.RouteAlreadyExistsException;
 import com.storlakovic.airlineoperationssimulator.common.RouteInvalidException;
 import com.storlakovic.airlineoperationssimulator.route.dto.RouteCreateRequest;
