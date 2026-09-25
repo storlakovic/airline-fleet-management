@@ -92,9 +92,12 @@ public class AircraftTypeService {
                 .filter(type -> !existingCodes.contains(type.getIcaoCode()))
                 .toList();
 
-        repository.saveAll(newAircraftTypes);
+        List<AircraftType> savedAircraftTypes =
+                repository.saveAll(newAircraftTypes);
 
-        return newAircraftTypes.stream().map(AircraftTypeResponse::from).toList();
+        return savedAircraftTypes.stream()
+                .map(AircraftTypeResponse::from)
+                .toList();
     }
 
 }
