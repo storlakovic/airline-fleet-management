@@ -28,10 +28,10 @@ public class AircraftTypeService {
 
     public List<AircraftTypeResponse> getAll() {
         List<AircraftType> aircraftTypes = repository.findAll();
-        return aircraftTypes.stream().map((aircraftType) -> new AircraftTypeResponse(aircraftType.getId(), aircraftType.getManufacturer(), aircraftType.getModel(), aircraftType.getIcaoCode())).toList();
+        return aircraftTypes.stream().map(AircraftTypeResponse::from).toList();
     }
 
-    public List<AircraftType> importAircraftTypes() {
+    public List<AircraftTypeResponse> importAircraftTypes() {
         try {
             List<AircraftType> aircraftTypes = loadAircraftTypes();
             return saveNewAircraftTypes(aircraftTypes);
@@ -82,7 +82,7 @@ public class AircraftTypeService {
         return aircraftTypes;
     }
 
-    List<AircraftType> saveNewAircraftTypes(List<AircraftType> aircraftTypes) {
+    List<AircraftTypeResponse> saveNewAircraftTypes(List<AircraftType> aircraftTypes) {
         Set<String> existingCodes = repository.findAll()
                 .stream()
                 .map(AircraftType::getIcaoCode)
@@ -92,7 +92,9 @@ public class AircraftTypeService {
                 .filter(type -> !existingCodes.contains(type.getIcaoCode()))
                 .toList();
 
-        return repository.saveAll(newAircraftTypes);
+        repository.saveAll(newAircraftTypes);
+
+        return newAircraftTypes.stream().map(AircraftTypeResponse::from).toList();
     }
 
 }

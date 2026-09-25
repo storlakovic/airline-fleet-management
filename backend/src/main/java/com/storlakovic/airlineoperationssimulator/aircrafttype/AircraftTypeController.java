@@ -23,7 +23,7 @@ public class AircraftTypeController {
     }
 
     @PostMapping("/import")
-    List<AircraftType> importAllAircraftTypes(){
+    List<AircraftTypeResponse> importAllAircraftTypes(){
         return aircraftTypeService.importAircraftTypes();
     }
 }
