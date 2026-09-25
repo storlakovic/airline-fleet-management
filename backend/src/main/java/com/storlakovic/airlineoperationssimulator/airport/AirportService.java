@@ -3,8 +3,8 @@ package com.storlakovic.airlineoperationssimulator.airport;
 import com.storlakovic.airlineoperationssimulator.airport.dto.AirportDetailsResponse;
 import com.storlakovic.airlineoperationssimulator.airport.dto.AirportResponse;
 import com.storlakovic.airlineoperationssimulator.airport.dto.AirportUpdateRequest;
-import com.storlakovic.airlineoperationssimulator.common.AirportImportException;
-import com.storlakovic.airlineoperationssimulator.common.AirportNotFoundException;
+import com.storlakovic.airlineoperationssimulator.airport.exceptions.AirportImportException;
+import com.storlakovic.airlineoperationssimulator.airport.exceptions.AirportNotFoundException;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVRecord;
 import org.springframework.core.io.ClassPathResource;
@@ -28,7 +28,7 @@ public class AirportService {
     }
 
 
-    public List<Airport> importAirports() {
+    public List<AirportResponse> importAirports() {
         try {
             List<Airport> airports = loadAirports();
             return saveNewAirports(airports);
@@ -66,6 +66,9 @@ public class AirportService {
                     .parse(reader);
 
             for (CSVRecord record : records) {
+                if(record.get("latitude_deg").isBlank() || record.get("longitude_deg").isBlank() || record.get("icao_code").isBlank() || record.get("name").isBlank() || record.get("iso_country").isBlank() || record.get("type").isBlank()){
+                    continue;
+                }
                 Airport airport = new Airport(
                         record.get("icao_code"),
                         record.get("iata_code"),
@@ -77,35 +80,32 @@ public class AirportService {
                         record.get("type"),
                         AirportStatus.OPERATIONAL
                 );
-                if(!record.get("icao_code").isEmpty() && !record.get("name").isEmpty() && !record.get("iso_country").isEmpty() && !record.get("latitude_deg").isEmpty() && !record.get("longitude_deg").isEmpty() && !record.get("type").isEmpty()){
-                    airports.add(airport);
-                }
-
+                airports.add(airport);
             }
         }
 
         return airports;
     }
 
-    public List<Airport> saveNewAirports(List<Airport> airports) {
+    public List<AirportResponse> saveNewAirports(List<Airport> airports) {
         List<Airport> newAirports = airports.stream()
                 .filter(a -> !repository.existsByIcaoCode(a.getIcaoCode()))
                 .toList();
-        return repository.saveAll(newAirports);
+        return repository.saveAll(newAirports).stream().map(AirportResponse::from).toList();
     }
 
     public AirportResponse updateAirport(Long id, AirportUpdateRequest request) {
         Airport airport = repository.findById(id).orElseThrow(() -> new AirportNotFoundException("Airport with id: " + id + " does not exist"));
 
-        airport.setStatus(request.getStatus());
+        airport.setStatus(request.status());
 
         Airport newAirport = repository.save(airport);
 
-        return new AirportResponse(newAirport.getId(), newAirport.getIcaoCode(), newAirport.getIataCode(), newAirport.getName(), newAirport.getType(), newAirport.getStatus());
+        return AirportResponse.from(newAirport);
     }
 
     public AirportDetailsResponse getAirport(Long id) {
         Airport airport = repository.findById(id).orElseThrow(() -> new AirportNotFoundException("Airport with id: " + id + " does not exist"));
-        return new AirportDetailsResponse(airport.getId(), airport.getIcaoCode(), airport.getIataCode(), airport.getName(), airport.getCity(), airport.getCountryCode(), airport.getLatitude(), airport.getLongitude(), airport.getType(), airport.getStatus());
+        return  AirportDetailsResponse.from(airport);
     }
 }
