@@ -1,4 +1,4 @@
-package com.storlakovic.airlineoperationssimulator.common;
+package com.storlakovic.airlineoperationssimulator.flight.exceptions;
 
 public class FlightCancellationNotAllowedException extends RuntimeException {
     public FlightCancellationNotAllowedException(String message) {

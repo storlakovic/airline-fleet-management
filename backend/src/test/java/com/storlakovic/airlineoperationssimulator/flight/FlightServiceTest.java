@@ -9,11 +9,13 @@ import com.storlakovic.airlineoperationssimulator.aircraft.exceptions.AircraftNo
 import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftType;
 import com.storlakovic.airlineoperationssimulator.airport.Airport;
 import com.storlakovic.airlineoperationssimulator.airport.AirportStatus;
-import com.storlakovic.airlineoperationssimulator.common.*;
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightCreateRequest;
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightDetailedResponse;
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightResponse;
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightUpdateRequest;
+import com.storlakovic.airlineoperationssimulator.flight.exceptions.FlightCancellationNotAllowedException;
+import com.storlakovic.airlineoperationssimulator.flight.exceptions.FlightNotFoundException;
+import com.storlakovic.airlineoperationssimulator.flight.exceptions.InvalidFlightTimeException;
 import com.storlakovic.airlineoperationssimulator.route.Route;
 import com.storlakovic.airlineoperationssimulator.route.exceptions.RouteNotFoundException;
 import com.storlakovic.airlineoperationssimulator.route.RouteRepository;
