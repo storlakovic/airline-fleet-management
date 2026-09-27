@@ -909,6 +909,38 @@ class FlightServiceTest {
         verify(flightRepository).save(flight);
     }
 
+    @Test
+    void shouldRejectFlightWhenDepartureTimeIsMissing() {
+        FlightCreateRequest request = new FlightCreateRequest(
+                "OS123",
+                10L,
+                null,
+                OffsetDateTime.now().plusHours(2)
+        );
+
+        assertThatThrownBy(() -> service.createFlight(request))
+                .isInstanceOf(InvalidFlightTimeException.class);
+
+        verify(routeRepository, never()).findById(any());
+        verify(flightRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldRejectFlightWhenArrivalTimeIsMissing() {
+        FlightCreateRequest request = new FlightCreateRequest(
+                "OS123",
+                10L,
+                OffsetDateTime.now(),
+                null
+        );
+
+        assertThatThrownBy(() -> service.createFlight(request))
+                .isInstanceOf(InvalidFlightTimeException.class);
+
+        verify(routeRepository, never()).findById(any());
+        verify(flightRepository, never()).save(any());
+    }
+
     private Flight flightWithTimes(Route route, OffsetDateTime departure, OffsetDateTime arrival) {
         return new Flight("OS123", route, departure, arrival);
     }

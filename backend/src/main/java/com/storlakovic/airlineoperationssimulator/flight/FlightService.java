@@ -35,8 +35,13 @@ public class FlightService {
 
     public FlightResponse createFlight(FlightCreateRequest request) {
 
-        if (request.scheduledDepartureTime() != null && request.scheduledArrivalTime() != null
-                && !request.scheduledDepartureTime().isBefore(request.scheduledArrivalTime())) {
+        if (request.scheduledDepartureTime() == null || request.scheduledArrivalTime() == null){
+            throw new InvalidFlightTimeException(
+                    "Scheduled departure and arrival times are required"
+            );
+        }
+
+        if (!request.scheduledDepartureTime().isBefore(request.scheduledArrivalTime())) {
             throw new InvalidFlightTimeException(
                     "Departure time must be before arrival time"
             );
