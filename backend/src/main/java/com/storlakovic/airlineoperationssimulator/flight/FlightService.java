@@ -9,6 +9,7 @@ import com.storlakovic.airlineoperationssimulator.flight.dto.FlightCreateRequest
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightDetailedResponse;
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightResponse;
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightUpdateRequest;
+import com.storlakovic.airlineoperationssimulator.flight.exceptions.AircraftAssignmentNotAllowedException;
 import com.storlakovic.airlineoperationssimulator.flight.exceptions.FlightCancellationNotAllowedException;
 import com.storlakovic.airlineoperationssimulator.flight.exceptions.FlightNotFoundException;
 import com.storlakovic.airlineoperationssimulator.flight.exceptions.InvalidFlightTimeException;
@@ -112,10 +113,19 @@ public class FlightService {
                         "Flight with id: " + flightId + " not found"
                 ));
 
+
+        if(flight.getStatus() != FlightStatus.UNKNOWN && flight.getStatus() != FlightStatus.SCHEDULED){
+            throw new AircraftAssignmentNotAllowedException("Aircraft cannot be assigned to flight with status " + flight.getStatus());
+        }
+
         Aircraft aircraft = aircraftRepository.findById(aircraftId)
                 .orElseThrow(() -> new AircraftNotFoundException(
                         "Aircraft with id " + aircraftId + " not found"
                 ));
+
+        if(!aircraft.isOperational()){
+            throw new AircraftNotOperationalException("Aircraft with id " + aircraftId + " is not operational and cannot be assigned");
+        }
 
         List<Flight> existingFlights = flightRepository.findByAircraft_Id(aircraftId);
 
@@ -131,11 +141,8 @@ public class FlightService {
             );
         }
 
-        if(!aircraft.isOperational()){
-            throw new AircraftNotOperationalException("Aircraft with id " + aircraftId + " is not operational and cannot be assigned");
-        }
-
         flight.setAircraft(aircraft);
+
         flight.setStatus(FlightStatus.SCHEDULED);
 
         Flight updatedFlight = flightRepository.save(flight);

@@ -13,6 +13,7 @@ import com.storlakovic.airlineoperationssimulator.flight.dto.FlightCreateRequest
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightDetailedResponse;
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightResponse;
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightUpdateRequest;
+import com.storlakovic.airlineoperationssimulator.flight.exceptions.AircraftAssignmentNotAllowedException;
 import com.storlakovic.airlineoperationssimulator.flight.exceptions.FlightCancellationNotAllowedException;
 import com.storlakovic.airlineoperationssimulator.flight.exceptions.FlightNotFoundException;
 import com.storlakovic.airlineoperationssimulator.flight.exceptions.InvalidFlightTimeException;
@@ -20,6 +21,8 @@ import com.storlakovic.airlineoperationssimulator.route.Route;
 import com.storlakovic.airlineoperationssimulator.route.exceptions.RouteNotFoundException;
 import com.storlakovic.airlineoperationssimulator.route.RouteRepository;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -808,6 +811,66 @@ class FlightServiceTest {
         assertThat(capturedThreshold).isBefore(before.plusMinutes(11));
     }
 
+    @Test
+    void shouldAssignAircraftToUnknownFlightAndSetStatusToScheduled() {
+        Airport origin = airport(1L, "LOWW");
+        Airport destination = airport(2L, "KJFK");
+        Route route = route(10L, origin, destination);
+
+        Flight flight = flightWithStatus(route, FlightStatus.UNKNOWN);
+        Aircraft aircraft = aircraft(10L, AircraftStatus.IN_SERVICE);
+
+        when(flightRepository.findById(1L))
+                .thenReturn(Optional.of(flight));
+
+        when(aircraftRepository.findById(10L))
+                .thenReturn(Optional.of(aircraft));
+
+        when(flightRepository.findByAircraft_Id(10L))
+                .thenReturn(List.of());
+
+        when(flightRepository.save(any(Flight.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        FlightResponse result = service.assignAircraft(1L, 10L);
+
+        assertThat(result.status()).isEqualTo(FlightStatus.SCHEDULED);
+        assertThat(flight.getAircraft()).isSameAs(aircraft);
+
+        verify(flightRepository).save(flight);
+    }
+
+    @ParameterizedTest
+    @EnumSource(
+            value = FlightStatus.class,
+            names = {
+                    "BOARDING",
+                    "EN_ROUTE",
+                    "APPROACH",
+                    "LANDED",
+                    "DELAYED",
+                    "CANCELLED"
+            }
+    )
+    void shouldRejectAircraftAssignmentForInvalidFlightStatus(FlightStatus status) {
+        Airport origin = airport(1L, "LOWW");
+        Airport destination = airport(2L, "KJFK");
+        Route route = route(10L, origin, destination);
+
+        Flight flight = flightWithStatus(route, status);
+
+        when(flightRepository.findById(1L))
+                .thenReturn(Optional.of(flight));
+
+        assertThatThrownBy(() ->
+                service.assignAircraft(1L, 10L)
+        )
+                .isInstanceOf(AircraftAssignmentNotAllowedException.class)
+                .hasMessageContaining(status.name());
+
+        verify(aircraftRepository, never()).findById(anyLong());
+        verify(flightRepository, never()).save(any());
+    }
 
     private Flight flightWithTimes(Route route, OffsetDateTime departure, OffsetDateTime arrival) {
         return new Flight("OS123", route, departure, arrival);
