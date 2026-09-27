@@ -14,7 +14,6 @@ import com.storlakovic.airlineoperationssimulator.flight.dto.FlightUpdateRequest
 import com.storlakovic.airlineoperationssimulator.route.Route;
 import com.storlakovic.airlineoperationssimulator.route.exceptions.RouteNotFoundException;
 import com.storlakovic.airlineoperationssimulator.route.RouteRepository;
-import com.storlakovic.airlineoperationssimulator.route.dto.RouteResponse;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
@@ -22,12 +21,12 @@ import java.util.List;
 
 @Service
 public class FlightService {
-    private final FlightRepository repository;
+    private final FlightRepository flightRepository;
     private final RouteRepository routeRepository;
     private final AircraftRepository aircraftRepository;
 
-    public FlightService(FlightRepository repository,  RouteRepository routeRepository,  AircraftRepository aircraftRepository) {
-        this.repository = repository;
+    public FlightService(FlightRepository flightRepository,  RouteRepository routeRepository,  AircraftRepository aircraftRepository) {
+        this.flightRepository = flightRepository;
         this.routeRepository = routeRepository;
         this.aircraftRepository = aircraftRepository;
     }
@@ -46,74 +45,28 @@ public class FlightService {
                         "Route with id: " + request.routeId() + " does not exist."
                 ));
 
-        Flight savedFlight = repository.save(new Flight(
+        Flight savedFlight = flightRepository.save(new Flight(
                 request.flightNumber(),
                 route,
                 request.scheduledDepartureTime(),
                 request.scheduledArrivalTime()
         ));
 
-        return new FlightResponse(
-                savedFlight.getId(),
-                savedFlight.getFlightNumber(),
-                new RouteResponse(
-                        route.getId(),
-                        route.getOrigin().getId(),
-                        route.getOrigin().getIcaoCode(),
-                        route.getDestination().getId(),
-                        route.getDestination().getIcaoCode()
-                ),
-                savedFlight.getRoute().getOrigin().getIcaoCode(),
-                savedFlight.getRoute().getDestination().getIcaoCode(),
-                savedFlight.getScheduledDepartureTime(),
-                savedFlight.getScheduledArrivalTime(),
-                savedFlight.getStatus(),
-                savedFlight.getAircraft() == null ? null : savedFlight.getAircraft().getAircraftType().getIcaoCode(),
-                savedFlight.getAircraft() == null ? null : savedFlight.getAircraft().getRegistration()
-        );
+        return FlightResponse.from(savedFlight);
     }
 
     public FlightDetailedResponse getFlight(Long id) {
-        Flight flight = repository.findById(id).orElseThrow(() -> new FlightNotFoundException("Flight with id: " + id + " not found"));
-        return new FlightDetailedResponse(
-                flight.getId(),
-                flight.getFlightNumber(),
-                flight.getRoute().getOrigin().getIcaoCode(),
-                flight.getRoute().getOrigin().getName(),
-                flight.getRoute().getDestination().getIcaoCode(),
-                flight.getRoute().getDestination().getName(),
-                flight.getScheduledDepartureTime(),
-                flight.getScheduledArrivalTime(),
-                flight.getActualDepartureTime(),
-                flight.getActualArrivalTime(),
-                flight.getStatus()
-        );
+        Flight flight = flightRepository.findById(id).orElseThrow(() -> new FlightNotFoundException("Flight with id: " + id + " not found"));
+        return FlightDetailedResponse.from(flight);
     }
 
     public List<FlightResponse> getAllFlights() {
-        List<Flight> flights = repository.findAll();
-        return flights.stream().map(flight -> new FlightResponse(
-                flight.getId(),
-                flight.getFlightNumber(),
-                new RouteResponse(
-                        flight.getRoute().getId(),
-                        flight.getRoute().getOrigin().getId(),
-                        flight.getRoute().getOrigin().getIcaoCode(),
-                        flight.getRoute().getDestination().getId(),
-                        flight.getRoute().getDestination().getIcaoCode()
-                ),
-                flight.getRoute().getOrigin().getIcaoCode(),
-                flight.getRoute().getDestination().getIcaoCode(),
-                flight.getScheduledDepartureTime(),
-                flight.getScheduledArrivalTime(),
-                flight.getStatus(),
-                flight.getAircraft() == null ? null : flight.getAircraft().getAircraftType().getIcaoCode(),
-                flight.getAircraft() == null ? null : flight.getAircraft().getRegistration()
-        )).toList();
+        List<Flight> flights = flightRepository.findAll();
+        return flights.stream().map(FlightResponse::from).toList();
     }
 
     public FlightResponse updateFlight(FlightUpdateRequest request, Long id) {
-        Flight flight = repository.findById(id).orElseThrow(() -> new FlightNotFoundException("Flight with id: " + id + " not found"));
+        Flight flight = flightRepository.findById(id).orElseThrow(() -> new FlightNotFoundException("Flight with id: " + id + " not found"));
 
         OffsetDateTime newDeparture = request.scheduledDepartureTime() != null
                 ? request.scheduledDepartureTime()
@@ -129,29 +82,14 @@ public class FlightService {
 
         flight.setScheduledDepartureTime(newDeparture);
         flight.setScheduledArrivalTime(newArrival);
-        Flight updatedFlight = repository.save(flight);
-        return new FlightResponse(
-                updatedFlight.getId(),
-                updatedFlight.getFlightNumber(),
-                new RouteResponse(
-                        updatedFlight.getRoute().getId(),
-                        updatedFlight.getRoute().getOrigin().getId(),
-                        updatedFlight.getRoute().getOrigin().getIcaoCode(),
-                        updatedFlight.getRoute().getDestination().getId(),
-                        updatedFlight.getRoute().getDestination().getIcaoCode()
-                ),
-                updatedFlight.getRoute().getOrigin().getIcaoCode(),
-                updatedFlight.getRoute().getDestination().getIcaoCode(),
-                updatedFlight.getScheduledDepartureTime(),
-                updatedFlight.getScheduledArrivalTime(),
-                updatedFlight.getStatus(),
-                updatedFlight.getAircraft() == null ? null : updatedFlight.getAircraft().getAircraftType().getIcaoCode(),
-                updatedFlight.getAircraft() == null ? null : updatedFlight.getAircraft().getRegistration()
-        );
+
+        Flight updatedFlight = flightRepository.save(flight);
+
+        return FlightResponse.from(updatedFlight);
     }
 
     public FlightResponse cancelFlight(Long id) {
-        Flight flight = repository.findById(id).orElseThrow(() -> new FlightNotFoundException("Flight with id: " + id + " not found"));
+        Flight flight = flightRepository.findById(id).orElseThrow(() -> new FlightNotFoundException("Flight with id: " + id + " not found"));
         boolean cancellable = flight.getStatus() == FlightStatus.UNKNOWN
                 || flight.getStatus() == FlightStatus.SCHEDULED
                 || flight.getStatus() == FlightStatus.DELAYED;
@@ -162,29 +100,13 @@ public class FlightService {
             );
         }
         flight.setStatus(FlightStatus.CANCELLED);
-        Flight updatedFlight = repository.save(flight);
-        return new FlightResponse(
-                updatedFlight.getId(),
-                updatedFlight.getFlightNumber(),
-                new RouteResponse(
-                        updatedFlight.getRoute().getId(),
-                        updatedFlight.getRoute().getOrigin().getId(),
-                        updatedFlight.getRoute().getOrigin().getIcaoCode(),
-                        updatedFlight.getRoute().getDestination().getId(),
-                        updatedFlight.getRoute().getDestination().getIcaoCode()
-                ),
-                updatedFlight.getRoute().getOrigin().getIcaoCode(),
-                updatedFlight.getRoute().getDestination().getIcaoCode(),
-                updatedFlight.getScheduledDepartureTime(),
-                updatedFlight.getScheduledArrivalTime(),
-                updatedFlight.getStatus(),
-                updatedFlight.getAircraft() == null ? null : updatedFlight.getAircraft().getAircraftType().getIcaoCode(),
-                updatedFlight.getAircraft() == null ? null : updatedFlight.getAircraft().getRegistration()
-        );
+        Flight updatedFlight = flightRepository.save(flight);
+
+        return FlightResponse.from(updatedFlight);
     }
 
     public FlightResponse assignAircraft(Long flightId, Long aircraftId) {
-        Flight flight = repository.findById(flightId)
+        Flight flight = flightRepository.findById(flightId)
                 .orElseThrow(() -> new FlightNotFoundException(
                         "Flight with id: " + flightId + " not found"
                 ));
@@ -194,7 +116,7 @@ public class FlightService {
                         "Aircraft with id " + aircraftId + " not found"
                 ));
 
-        List<Flight> existingFlights = repository.findByAircraft_Id(aircraftId);
+        List<Flight> existingFlights = flightRepository.findByAircraft_Id(aircraftId);
 
         boolean hasOverlap = existingFlights.stream().filter(existing -> existing.getStatus() != FlightStatus.CANCELLED)
                 .anyMatch(existing ->
@@ -217,53 +139,36 @@ public class FlightService {
         flight.setAircraft(aircraft);
         flight.setStatus(FlightStatus.SCHEDULED);
 
-        Flight updatedFlight = repository.save(flight);
+        Flight updatedFlight = flightRepository.save(flight);
 
-        return new FlightResponse(
-                updatedFlight.getId(),
-                updatedFlight.getFlightNumber(),
-                new RouteResponse(
-                        updatedFlight.getRoute().getId(),
-                        updatedFlight.getRoute().getOrigin().getId(),
-                        updatedFlight.getRoute().getOrigin().getIcaoCode(),
-                        updatedFlight.getRoute().getDestination().getId(),
-                        updatedFlight.getRoute().getDestination().getIcaoCode()
-                ),
-                updatedFlight.getRoute().getOrigin().getIcaoCode(),
-                updatedFlight.getRoute().getDestination().getIcaoCode(),
-                updatedFlight.getScheduledDepartureTime(),
-                updatedFlight.getScheduledArrivalTime(),
-                updatedFlight.getStatus(),
-                updatedFlight.getAircraft() == null ? null : updatedFlight.getAircraft().getAircraftType().getIcaoCode(),
-                updatedFlight.getAircraft() == null ? null : updatedFlight.getAircraft().getRegistration()
-        );
+        return FlightResponse.from(updatedFlight);
     }
 
     public void progressFlightStatuses() {
         OffsetDateTime now = OffsetDateTime.now();
 
-        List<Flight> toBoard = repository.findByStatusAndScheduledDepartureTimeBefore(
+        List<Flight> toBoard = flightRepository.findByStatusAndScheduledDepartureTimeBefore(
                 FlightStatus.SCHEDULED, now.plusMinutes(10)
         );
         toBoard.forEach(flight -> flight.setStatus(FlightStatus.BOARDING));
-        repository.saveAll(toBoard);
+        flightRepository.saveAll(toBoard);
 
-        List<Flight> toDepart = repository.findByStatusAndScheduledDepartureTimeBefore(
+        List<Flight> toDepart = flightRepository.findByStatusAndScheduledDepartureTimeBefore(
                 FlightStatus.BOARDING, now
         );
         toDepart.forEach(flight -> {
             flight.setStatus(FlightStatus.EN_ROUTE);
             flight.setActualDepartureTime(now);
         });
-        repository.saveAll(toDepart);
+        flightRepository.saveAll(toDepart);
 
-        List<Flight> toLand = repository.findByStatusAndScheduledArrivalTimeBefore(
+        List<Flight> toLand = flightRepository.findByStatusAndScheduledArrivalTimeBefore(
                 FlightStatus.EN_ROUTE, now
         );
         toLand.forEach(flight -> {
             flight.setStatus(FlightStatus.LANDED);
             flight.setActualArrivalTime(now);
         });
-        repository.saveAll(toLand);
+        flightRepository.saveAll(toLand);
     }
 }

@@ -90,19 +90,13 @@ class FlightServiceTest {
         assertThat(result.status())
                 .isEqualTo(FlightStatus.UNKNOWN);
 
-        assertThat(result.route().id())
+        assertThat(result.routeId())
                 .isEqualTo(10L);
 
-        assertThat(result.route().originAirportId())
-                .isEqualTo(1L);
-
-        assertThat(result.route().originIcaoCode())
+        assertThat(result.originIcaoCode())
                 .isEqualTo("LOWW");
 
-        assertThat(result.route().destinationAirportId())
-                .isEqualTo(2L);
-
-        assertThat(result.route().destinationIcaoCode())
+        assertThat(result.destinationIcaoCode())
                 .isEqualTo("KJFK");
 
         verify(repository).save(any(Flight.class));
@@ -302,15 +296,15 @@ class FlightServiceTest {
 
         assertThat(result).hasSize(2);
 
-        assertThat(result.get(0).id()).isEqualTo(1L);
-        assertThat(result.get(0).flightNumber()).isEqualTo("OS123");
-        assertThat(result.get(0).route().originIcaoCode()).isEqualTo("LOWW");
-        assertThat(result.get(0).route().destinationIcaoCode()).isEqualTo("KJFK");
+        assertThat(result.getFirst().id()).isEqualTo(1L);
+        assertThat(result.getFirst().flightNumber()).isEqualTo("OS123");
+        assertThat(result.getFirst().originIcaoCode()).isEqualTo("LOWW");
+        assertThat(result.getFirst().destinationIcaoCode()).isEqualTo("KJFK");
 
         assertThat(result.get(1).id()).isEqualTo(2L);
         assertThat(result.get(1).flightNumber()).isEqualTo("LH456");
-        assertThat(result.get(1).route().originIcaoCode()).isEqualTo("EDDF");
-        assertThat(result.get(1).route().destinationIcaoCode()).isEqualTo("LFPG");
+        assertThat(result.get(1).originIcaoCode()).isEqualTo("EDDF");
+        assertThat(result.get(1).destinationIcaoCode()).isEqualTo("LFPG");
     }
 
 
