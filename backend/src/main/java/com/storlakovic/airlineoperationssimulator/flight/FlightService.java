@@ -2,7 +2,6 @@ package com.storlakovic.airlineoperationssimulator.flight;
 
 import com.storlakovic.airlineoperationssimulator.aircraft.Aircraft;
 import com.storlakovic.airlineoperationssimulator.aircraft.AircraftRepository;
-import com.storlakovic.airlineoperationssimulator.aircraft.AircraftStatus;
 import com.storlakovic.airlineoperationssimulator.aircraft.exceptions.AircraftAlreadyAssignedException;
 import com.storlakovic.airlineoperationssimulator.aircraft.exceptions.AircraftNotFoundException;
 import com.storlakovic.airlineoperationssimulator.aircraft.exceptions.AircraftNotOperationalException;
@@ -132,10 +131,8 @@ public class FlightService {
             );
         }
 
-        if (aircraft.getStatus() != AircraftStatus.IN_SERVICE) {
-            throw new AircraftNotOperationalException(
-                    "Aircraft with id " + aircraftId + " is not operational and cannot be assigned"
-            );
+        if(!aircraft.isOperational()){
+            throw new AircraftNotOperationalException("Aircraft with id " + aircraftId + " is not operational and cannot be assigned");
         }
 
         flight.setAircraft(aircraft);
