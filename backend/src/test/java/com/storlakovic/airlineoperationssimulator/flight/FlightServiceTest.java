@@ -615,6 +615,7 @@ class FlightServiceTest {
                 OffsetDateTime.of(2026, 9, 20, 12, 0, 0, 0, ZoneOffset.UTC),
                 OffsetDateTime.of(2026, 9, 20, 15, 0, 0, 0, ZoneOffset.UTC));
         ReflectionTestUtils.setField(existingFlight, "status", FlightStatus.SCHEDULED);
+        ReflectionTestUtils.setField(existingFlight, "id", 2L);
 
         Aircraft aircraft = aircraft(5L, AircraftStatus.IN_SERVICE);
 
@@ -670,6 +671,7 @@ class FlightServiceTest {
                 OffsetDateTime.of(2026, 9, 20, 14, 0, 0, 0, ZoneOffset.UTC),
                 OffsetDateTime.of(2026, 9, 20, 16, 0, 0, 0, ZoneOffset.UTC));
         ReflectionTestUtils.setField(nonOverlapping, "status", FlightStatus.SCHEDULED);
+        ReflectionTestUtils.setField(nonOverlapping, "id", 2L);
 
         Aircraft aircraft = aircraft(5L, AircraftStatus.IN_SERVICE);
 
@@ -870,6 +872,41 @@ class FlightServiceTest {
 
         verify(aircraftRepository, never()).findById(anyLong());
         verify(flightRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldAllowReassigningSameAircraftToSameFlight() {
+        Route route = route(
+                10L,
+                airport(1L, "LOWW"),
+                airport(2L, "KJFK")
+        );
+
+        Flight flight = flightWithStatus(route, FlightStatus.SCHEDULED);
+        ReflectionTestUtils.setField(flight, "id", 1L);
+
+        Aircraft aircraft = aircraft(5L, AircraftStatus.IN_SERVICE);
+        ReflectionTestUtils.setField(flight, "aircraft", aircraft);
+
+        when(flightRepository.findById(1L))
+                .thenReturn(Optional.of(flight));
+
+        when(aircraftRepository.findById(5L))
+                .thenReturn(Optional.of(aircraft));
+
+        when(flightRepository.findByAircraft_Id(5L))
+                .thenReturn(List.of(flight));
+
+        when(flightRepository.save(any(Flight.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        FlightResponse result = service.assignAircraft(1L, 5L);
+
+        assertThat(result.id()).isEqualTo(1L);
+        assertThat(result.status()).isEqualTo(FlightStatus.SCHEDULED);
+        assertThat(flight.getAircraft()).isSameAs(aircraft);
+
+        verify(flightRepository).save(flight);
     }
 
     private Flight flightWithTimes(Route route, OffsetDateTime departure, OffsetDateTime arrival) {

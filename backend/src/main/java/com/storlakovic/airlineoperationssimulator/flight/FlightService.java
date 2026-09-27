@@ -129,7 +129,9 @@ public class FlightService {
 
         List<Flight> existingFlights = flightRepository.findByAircraft_Id(aircraftId);
 
-        boolean hasOverlap = existingFlights.stream().filter(existing -> existing.getStatus() != FlightStatus.CANCELLED)
+        boolean hasOverlap = existingFlights.stream()
+                .filter(existing -> existing.getStatus() != FlightStatus.CANCELLED)
+                .filter(existing -> !existing.getId().equals(flightId))
                 .anyMatch(existing ->
                         flight.getScheduledDepartureTime().isBefore(existing.getScheduledArrivalTime())
                                 && existing.getScheduledDepartureTime().isBefore(flight.getScheduledArrivalTime())
