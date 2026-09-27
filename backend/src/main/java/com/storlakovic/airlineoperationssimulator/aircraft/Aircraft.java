@@ -52,4 +52,8 @@ public class Aircraft {
         }
         this.status = status;
     }
+
+    public boolean isOperational(){
+        return this.status == AircraftStatus.IN_SERVICE;
+    }
 }

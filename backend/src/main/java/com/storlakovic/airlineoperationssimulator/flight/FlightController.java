@@ -19,7 +19,7 @@ public class FlightController {
     }
 
     @PostMapping(path = "/create")
-    public FlightResponse createFlight(FlightCreateRequest createFlightRequest) {
+    public FlightResponse createFlight(@RequestBody FlightCreateRequest createFlightRequest) {
         return flightService.createFlight(createFlightRequest);
     }
 

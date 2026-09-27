@@ -9,15 +9,20 @@ import com.storlakovic.airlineoperationssimulator.aircraft.exceptions.AircraftNo
 import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftType;
 import com.storlakovic.airlineoperationssimulator.airport.Airport;
 import com.storlakovic.airlineoperationssimulator.airport.AirportStatus;
-import com.storlakovic.airlineoperationssimulator.common.*;
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightCreateRequest;
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightDetailedResponse;
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightResponse;
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightUpdateRequest;
+import com.storlakovic.airlineoperationssimulator.flight.exceptions.AircraftAssignmentNotAllowedException;
+import com.storlakovic.airlineoperationssimulator.flight.exceptions.FlightCancellationNotAllowedException;
+import com.storlakovic.airlineoperationssimulator.flight.exceptions.FlightNotFoundException;
+import com.storlakovic.airlineoperationssimulator.flight.exceptions.InvalidFlightTimeException;
 import com.storlakovic.airlineoperationssimulator.route.Route;
 import com.storlakovic.airlineoperationssimulator.route.exceptions.RouteNotFoundException;
 import com.storlakovic.airlineoperationssimulator.route.RouteRepository;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -32,7 +37,7 @@ import static org.mockito.Mockito.*;
 
 class FlightServiceTest {
 
-    private final FlightRepository repository =
+    private final FlightRepository flightRepository =
             mock(FlightRepository.class);
 
     private final RouteRepository routeRepository =
@@ -42,7 +47,7 @@ class FlightServiceTest {
             mock(AircraftRepository.class);
 
     private final FlightService service =
-            new FlightService(repository, routeRepository, aircraftRepository);
+            new FlightService(flightRepository, routeRepository, aircraftRepository);
 
 
     @Test
@@ -66,7 +71,7 @@ class FlightServiceTest {
         when(routeRepository.findById(10L))
                 .thenReturn(Optional.of(route));
 
-        when(repository.save(any(Flight.class)))
+        when(flightRepository.save(any(Flight.class)))
                 .thenAnswer(invocation -> {
                     Flight flight = invocation.getArgument(0);
                     ReflectionTestUtils.setField(flight, "id", 1L);
@@ -90,22 +95,16 @@ class FlightServiceTest {
         assertThat(result.status())
                 .isEqualTo(FlightStatus.UNKNOWN);
 
-        assertThat(result.route().id())
+        assertThat(result.routeId())
                 .isEqualTo(10L);
 
-        assertThat(result.route().originAirportId())
-                .isEqualTo(1L);
-
-        assertThat(result.route().originIcaoCode())
+        assertThat(result.originIcaoCode())
                 .isEqualTo("LOWW");
 
-        assertThat(result.route().destinationAirportId())
-                .isEqualTo(2L);
-
-        assertThat(result.route().destinationIcaoCode())
+        assertThat(result.destinationIcaoCode())
                 .isEqualTo("KJFK");
 
-        verify(repository).save(any(Flight.class));
+        verify(flightRepository).save(any(Flight.class));
     }
 
 
@@ -127,7 +126,7 @@ class FlightServiceTest {
                 .isInstanceOf(RouteNotFoundException.class)
                 .hasMessage("Route with id: 99 does not exist.");
 
-        verify(repository, never())
+        verify(flightRepository, never())
                 .save(any(Flight.class));
     }
 
@@ -150,14 +149,14 @@ class FlightServiceTest {
         when(routeRepository.findById(10L))
                 .thenReturn(Optional.of(route));
 
-        when(repository.save(any(Flight.class)))
+        when(flightRepository.save(any(Flight.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         ArgumentCaptor<Flight> captor = ArgumentCaptor.forClass(Flight.class);
 
         service.createFlight(request);
 
-        verify(repository).save(captor.capture());
+        verify(flightRepository).save(captor.capture());
 
         assertThat(captor.getValue().getRoute())
                 .isSameAs(route);
@@ -176,7 +175,7 @@ class FlightServiceTest {
         Flight flight = new Flight("OS123", route, departure, arrival);
         ReflectionTestUtils.setField(flight, "id", 1L);
 
-        when(repository.findById(1L))
+        when(flightRepository.findById(1L))
                 .thenReturn(Optional.of(flight));
 
         FlightDetailedResponse result = service.getFlight(1L);
@@ -206,7 +205,7 @@ class FlightServiceTest {
 
     @Test
     void shouldThrowWhenFlightDoesNotExist() {
-        when(repository.findById(99L))
+        when(flightRepository.findById(99L))
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() ->
@@ -232,7 +231,7 @@ class FlightServiceTest {
                 .hasMessage("Departure time must be before arrival time");
 
         verify(routeRepository, never()).findById(any());
-        verify(repository, never()).save(any());
+        verify(flightRepository, never()).save(any());
     }
 
 
@@ -252,7 +251,7 @@ class FlightServiceTest {
         )
                 .isInstanceOf(InvalidFlightTimeException.class);
 
-        verify(repository, never()).save(any());
+        verify(flightRepository, never()).save(any());
     }
 
 
@@ -267,7 +266,7 @@ class FlightServiceTest {
         FlightCreateRequest request = new FlightCreateRequest("OS123", 10L, departure, arrival);
 
         when(routeRepository.findById(10L)).thenReturn(Optional.of(route));
-        when(repository.save(any(Flight.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(flightRepository.save(any(Flight.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         FlightResponse result = service.createFlight(request);
 
@@ -295,28 +294,28 @@ class FlightServiceTest {
         );
         ReflectionTestUtils.setField(flight2, "id", 2L);
 
-        when(repository.findAll())
+        when(flightRepository.findAll())
                 .thenReturn(List.of(flight1, flight2));
 
         List<FlightResponse> result = service.getAllFlights();
 
         assertThat(result).hasSize(2);
 
-        assertThat(result.get(0).id()).isEqualTo(1L);
-        assertThat(result.get(0).flightNumber()).isEqualTo("OS123");
-        assertThat(result.get(0).route().originIcaoCode()).isEqualTo("LOWW");
-        assertThat(result.get(0).route().destinationIcaoCode()).isEqualTo("KJFK");
+        assertThat(result.getFirst().id()).isEqualTo(1L);
+        assertThat(result.getFirst().flightNumber()).isEqualTo("OS123");
+        assertThat(result.getFirst().originIcaoCode()).isEqualTo("LOWW");
+        assertThat(result.getFirst().destinationIcaoCode()).isEqualTo("KJFK");
 
         assertThat(result.get(1).id()).isEqualTo(2L);
         assertThat(result.get(1).flightNumber()).isEqualTo("LH456");
-        assertThat(result.get(1).route().originIcaoCode()).isEqualTo("EDDF");
-        assertThat(result.get(1).route().destinationIcaoCode()).isEqualTo("LFPG");
+        assertThat(result.get(1).originIcaoCode()).isEqualTo("EDDF");
+        assertThat(result.get(1).destinationIcaoCode()).isEqualTo("LFPG");
     }
 
 
     @Test
     void shouldReturnEmptyListWhenNoFlightsExist() {
-        when(repository.findAll())
+        when(flightRepository.findAll())
                 .thenReturn(List.of());
 
         List<FlightResponse> result = service.getAllFlights();
@@ -340,8 +339,8 @@ class FlightServiceTest {
 
         FlightUpdateRequest request = new FlightUpdateRequest(newDeparture, newArrival);
 
-        when(repository.findById(1L)).thenReturn(Optional.of(flight));
-        when(repository.save(any(Flight.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(flightRepository.findById(1L)).thenReturn(Optional.of(flight));
+        when(flightRepository.save(any(Flight.class))).thenAnswer(inv -> inv.getArgument(0));
 
         FlightResponse result = service.updateFlight(request, 1L);
 
@@ -367,8 +366,8 @@ class FlightServiceTest {
 
         FlightUpdateRequest request = new FlightUpdateRequest(newDeparture, null);
 
-        when(repository.findById(1L)).thenReturn(Optional.of(flight));
-        when(repository.save(any(Flight.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(flightRepository.findById(1L)).thenReturn(Optional.of(flight));
+        when(flightRepository.save(any(Flight.class))).thenAnswer(inv -> inv.getArgument(0));
 
         FlightResponse result = service.updateFlight(request, 1L);
 
@@ -393,7 +392,7 @@ class FlightServiceTest {
 
         FlightUpdateRequest request = new FlightUpdateRequest(invalidDeparture, null);
 
-        when(repository.findById(1L)).thenReturn(Optional.of(flight));
+        when(flightRepository.findById(1L)).thenReturn(Optional.of(flight));
 
         assertThatThrownBy(() ->
                 service.updateFlight(request, 1L)
@@ -401,7 +400,7 @@ class FlightServiceTest {
                 .isInstanceOf(InvalidFlightTimeException.class)
                 .hasMessage("Departure time must be before arrival time");
 
-        verify(repository, never()).save(any());
+        verify(flightRepository, never()).save(any());
     }
 
 
@@ -412,7 +411,7 @@ class FlightServiceTest {
                 OffsetDateTime.of(2026, 9, 20, 13, 0, 0, 0, ZoneOffset.UTC)
         );
 
-        when(repository.findById(99L)).thenReturn(Optional.empty());
+        when(flightRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() ->
                 service.updateFlight(request, 99L)
@@ -420,7 +419,7 @@ class FlightServiceTest {
                 .isInstanceOf(FlightNotFoundException.class)
                 .hasMessage("Flight with id: 99 not found");
 
-        verify(repository, never()).save(any());
+        verify(flightRepository, never()).save(any());
     }
 
     @Test
@@ -429,13 +428,13 @@ class FlightServiceTest {
         Flight flight = flightWithStatus(route, FlightStatus.SCHEDULED);
         ReflectionTestUtils.setField(flight, "id", 1L);
 
-        when(repository.findById(1L)).thenReturn(Optional.of(flight));
-        when(repository.save(any(Flight.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(flightRepository.findById(1L)).thenReturn(Optional.of(flight));
+        when(flightRepository.save(any(Flight.class))).thenAnswer(inv -> inv.getArgument(0));
 
         FlightResponse result = service.cancelFlight(1L);
 
         assertThat(result.status()).isEqualTo(FlightStatus.CANCELLED);
-        verify(repository).save(flight);
+        verify(flightRepository).save(flight);
     }
 
 
@@ -445,8 +444,8 @@ class FlightServiceTest {
         Flight flight = flightWithStatus(route, FlightStatus.DELAYED);
         ReflectionTestUtils.setField(flight, "id", 1L);
 
-        when(repository.findById(1L)).thenReturn(Optional.of(flight));
-        when(repository.save(any(Flight.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(flightRepository.findById(1L)).thenReturn(Optional.of(flight));
+        when(flightRepository.save(any(Flight.class))).thenAnswer(inv -> inv.getArgument(0));
 
         FlightResponse result = service.cancelFlight(1L);
 
@@ -460,8 +459,8 @@ class FlightServiceTest {
         Flight flight = flightWithStatus(route, FlightStatus.UNKNOWN);
         ReflectionTestUtils.setField(flight, "id", 1L);
 
-        when(repository.findById(1L)).thenReturn(Optional.of(flight));
-        when(repository.save(any(Flight.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(flightRepository.findById(1L)).thenReturn(Optional.of(flight));
+        when(flightRepository.save(any(Flight.class))).thenAnswer(inv -> inv.getArgument(0));
 
         FlightResponse result = service.cancelFlight(1L);
 
@@ -475,14 +474,14 @@ class FlightServiceTest {
         Flight flight = flightWithStatus(route, FlightStatus.CANCELLED);
         ReflectionTestUtils.setField(flight, "id", 1L);
 
-        when(repository.findById(1L)).thenReturn(Optional.of(flight));
+        when(flightRepository.findById(1L)).thenReturn(Optional.of(flight));
 
         assertThatThrownBy(() ->
                 service.cancelFlight(1L)
         )
                 .isInstanceOf(FlightCancellationNotAllowedException.class);
 
-        verify(repository, never()).save(any());
+        verify(flightRepository, never()).save(any());
     }
 
 
@@ -492,20 +491,20 @@ class FlightServiceTest {
         Flight flight = flightWithStatus(route, FlightStatus.LANDED);
         ReflectionTestUtils.setField(flight, "id", 1L);
 
-        when(repository.findById(1L)).thenReturn(Optional.of(flight));
+        when(flightRepository.findById(1L)).thenReturn(Optional.of(flight));
 
         assertThatThrownBy(() ->
                 service.cancelFlight(1L)
         )
                 .isInstanceOf(FlightCancellationNotAllowedException.class);
 
-        verify(repository, never()).save(any());
+        verify(flightRepository, never()).save(any());
     }
 
 
     @Test
     void shouldThrowWhenFlightDoesNotExistOnFlightCancellation() {
-        when(repository.findById(99L)).thenReturn(Optional.empty());
+        when(flightRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() ->
                 service.cancelFlight(99L)
@@ -513,7 +512,7 @@ class FlightServiceTest {
                 .isInstanceOf(FlightNotFoundException.class)
                 .hasMessage("Flight with id: 99 not found");
 
-        verify(repository, never()).save(any());
+        verify(flightRepository, never()).save(any());
     }
 
 
@@ -525,13 +524,13 @@ class FlightServiceTest {
 
         Aircraft aircraft = aircraft(5L, AircraftStatus.IN_SERVICE);
 
-        when(repository.findById(1L))
+        when(flightRepository.findById(1L))
                 .thenReturn(Optional.of(flight));
 
         when(aircraftRepository.findById(5L))
                 .thenReturn(Optional.of(aircraft));
 
-        when(repository.save(any(Flight.class)))
+        when(flightRepository.save(any(Flight.class)))
                 .thenAnswer(inv -> inv.getArgument(0));
 
         FlightResponse result = service.assignAircraft(1L, 5L);
@@ -539,13 +538,13 @@ class FlightServiceTest {
         assertThat(result.id()).isEqualTo(1L);
         assertThat(flight.getAircraft()).isSameAs(aircraft);
 
-        verify(repository).save(flight);
+        verify(flightRepository).save(flight);
     }
 
 
     @Test
     void shouldThrowWhenFlightDoesNotExistWhenAssigningAircraftToFlight() {
-        when(repository.findById(99L))
+        when(flightRepository.findById(99L))
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() ->
@@ -555,7 +554,7 @@ class FlightServiceTest {
                 .hasMessage("Flight with id: 99 not found");
 
         verify(aircraftRepository, never()).findById(any());
-        verify(repository, never()).save(any());
+        verify(flightRepository, never()).save(any());
     }
 
 
@@ -565,7 +564,7 @@ class FlightServiceTest {
         Flight flight = flightWithStatus(route, FlightStatus.SCHEDULED);
         ReflectionTestUtils.setField(flight, "id", 1L);
 
-        when(repository.findById(1L))
+        when(flightRepository.findById(1L))
                 .thenReturn(Optional.of(flight));
 
         when(aircraftRepository.findById(99L))
@@ -577,7 +576,7 @@ class FlightServiceTest {
                 .isInstanceOf(AircraftNotFoundException.class)
                 .hasMessage("Aircraft with id 99 not found");
 
-        verify(repository, never()).save(any());
+        verify(flightRepository, never()).save(any());
     }
 
 
@@ -589,7 +588,7 @@ class FlightServiceTest {
 
         Aircraft aircraft = aircraft(5L, AircraftStatus.MAINTENANCE);
 
-        when(repository.findById(1L))
+        when(flightRepository.findById(1L))
                 .thenReturn(Optional.of(flight));
 
         when(aircraftRepository.findById(5L))
@@ -600,7 +599,7 @@ class FlightServiceTest {
         )
                 .isInstanceOf(AircraftNotOperationalException.class);
 
-        verify(repository, never()).save(any());
+        verify(flightRepository, never()).save(any());
         assertThat(flight.getAircraft()).isNull();
     }
 
@@ -616,19 +615,20 @@ class FlightServiceTest {
                 OffsetDateTime.of(2026, 9, 20, 12, 0, 0, 0, ZoneOffset.UTC),
                 OffsetDateTime.of(2026, 9, 20, 15, 0, 0, 0, ZoneOffset.UTC));
         ReflectionTestUtils.setField(existingFlight, "status", FlightStatus.SCHEDULED);
+        ReflectionTestUtils.setField(existingFlight, "id", 2L);
 
         Aircraft aircraft = aircraft(5L, AircraftStatus.IN_SERVICE);
 
-        when(repository.findById(1L)).thenReturn(Optional.of(newFlight));
+        when(flightRepository.findById(1L)).thenReturn(Optional.of(newFlight));
         when(aircraftRepository.findById(5L)).thenReturn(Optional.of(aircraft));
-        when(repository.findByAircraft_Id(5L)).thenReturn(List.of(existingFlight));
+        when(flightRepository.findByAircraft_Id(5L)).thenReturn(List.of(existingFlight));
 
         assertThatThrownBy(() ->
                 service.assignAircraft(1L, 5L)
         )
                 .isInstanceOf(AircraftAlreadyAssignedException.class);
 
-        verify(repository, never()).save(any());
+        verify(flightRepository, never()).save(any());
     }
 
 
@@ -647,15 +647,15 @@ class FlightServiceTest {
 
         Aircraft aircraft = aircraft(5L, AircraftStatus.IN_SERVICE);
 
-        when(repository.findById(1L)).thenReturn(Optional.of(newFlight));
+        when(flightRepository.findById(1L)).thenReturn(Optional.of(newFlight));
         when(aircraftRepository.findById(5L)).thenReturn(Optional.of(aircraft));
-        when(repository.findByAircraft_Id(5L)).thenReturn(List.of(cancelledFlight));
-        when(repository.save(any(Flight.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(flightRepository.findByAircraft_Id(5L)).thenReturn(List.of(cancelledFlight));
+        when(flightRepository.save(any(Flight.class))).thenAnswer(inv -> inv.getArgument(0));
 
         FlightResponse result = service.assignAircraft(1L, 5L);
 
         assertThat(result.id()).isEqualTo(1L);
-        verify(repository).save(newFlight);
+        verify(flightRepository).save(newFlight);
     }
 
 
@@ -671,13 +671,14 @@ class FlightServiceTest {
                 OffsetDateTime.of(2026, 9, 20, 14, 0, 0, 0, ZoneOffset.UTC),
                 OffsetDateTime.of(2026, 9, 20, 16, 0, 0, 0, ZoneOffset.UTC));
         ReflectionTestUtils.setField(nonOverlapping, "status", FlightStatus.SCHEDULED);
+        ReflectionTestUtils.setField(nonOverlapping, "id", 2L);
 
         Aircraft aircraft = aircraft(5L, AircraftStatus.IN_SERVICE);
 
-        when(repository.findById(1L)).thenReturn(Optional.of(newFlight));
+        when(flightRepository.findById(1L)).thenReturn(Optional.of(newFlight));
         when(aircraftRepository.findById(5L)).thenReturn(Optional.of(aircraft));
-        when(repository.findByAircraft_Id(5L)).thenReturn(List.of(nonOverlapping));
-        when(repository.save(any(Flight.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(flightRepository.findByAircraft_Id(5L)).thenReturn(List.of(nonOverlapping));
+        when(flightRepository.save(any(Flight.class))).thenAnswer(inv -> inv.getArgument(0));
 
         FlightResponse result = service.assignAircraft(1L, 5L);
 
@@ -692,22 +693,22 @@ class FlightServiceTest {
         Flight flight = flightWithStatus(route, FlightStatus.SCHEDULED);
         ReflectionTestUtils.setField(flight, "id", 1L);
 
-        when(repository.findByStatusAndScheduledDepartureTimeBefore(
+        when(flightRepository.findByStatusAndScheduledDepartureTimeBefore(
                 eq(FlightStatus.SCHEDULED), any(OffsetDateTime.class)))
                 .thenReturn(List.of(flight));
 
-        when(repository.findByStatusAndScheduledDepartureTimeBefore(
+        when(flightRepository.findByStatusAndScheduledDepartureTimeBefore(
                 eq(FlightStatus.BOARDING), any(OffsetDateTime.class)))
                 .thenReturn(List.of());
 
-        when(repository.findByStatusAndScheduledArrivalTimeBefore(
+        when(flightRepository.findByStatusAndScheduledArrivalTimeBefore(
                 eq(FlightStatus.EN_ROUTE), any(OffsetDateTime.class)))
                 .thenReturn(List.of());
 
         service.progressFlightStatuses();
 
         assertThat(flight.getStatus()).isEqualTo(FlightStatus.BOARDING);
-        verify(repository).saveAll(List.of(flight));
+        verify(flightRepository).saveAll(List.of(flight));
     }
 
 
@@ -718,15 +719,15 @@ class FlightServiceTest {
         Flight flight = flightWithStatus(route, FlightStatus.BOARDING);
         ReflectionTestUtils.setField(flight, "id", 1L);
 
-        when(repository.findByStatusAndScheduledDepartureTimeBefore(
+        when(flightRepository.findByStatusAndScheduledDepartureTimeBefore(
                 eq(FlightStatus.SCHEDULED), any(OffsetDateTime.class)))
                 .thenReturn(List.of());
 
-        when(repository.findByStatusAndScheduledDepartureTimeBefore(
+        when(flightRepository.findByStatusAndScheduledDepartureTimeBefore(
                 eq(FlightStatus.BOARDING), any(OffsetDateTime.class)))
                 .thenReturn(List.of(flight));
 
-        when(repository.findByStatusAndScheduledArrivalTimeBefore(
+        when(flightRepository.findByStatusAndScheduledArrivalTimeBefore(
                 eq(FlightStatus.EN_ROUTE), any(OffsetDateTime.class)))
                 .thenReturn(List.of());
 
@@ -734,7 +735,7 @@ class FlightServiceTest {
 
         assertThat(flight.getStatus()).isEqualTo(FlightStatus.EN_ROUTE);
         assertThat(flight.getActualDepartureTime()).isNotNull();
-        verify(repository).saveAll(List.of(flight));
+        verify(flightRepository).saveAll(List.of(flight));
     }
 
 
@@ -745,15 +746,15 @@ class FlightServiceTest {
         Flight flight = flightWithStatus(route, FlightStatus.EN_ROUTE);
         ReflectionTestUtils.setField(flight, "id", 1L);
 
-        when(repository.findByStatusAndScheduledDepartureTimeBefore(
+        when(flightRepository.findByStatusAndScheduledDepartureTimeBefore(
                 eq(FlightStatus.SCHEDULED), any(OffsetDateTime.class)))
                 .thenReturn(List.of());
 
-        when(repository.findByStatusAndScheduledDepartureTimeBefore(
+        when(flightRepository.findByStatusAndScheduledDepartureTimeBefore(
                 eq(FlightStatus.BOARDING), any(OffsetDateTime.class)))
                 .thenReturn(List.of());
 
-        when(repository.findByStatusAndScheduledArrivalTimeBefore(
+        when(flightRepository.findByStatusAndScheduledArrivalTimeBefore(
                 eq(FlightStatus.EN_ROUTE), any(OffsetDateTime.class)))
                 .thenReturn(List.of(flight));
 
@@ -761,41 +762,41 @@ class FlightServiceTest {
 
         assertThat(flight.getStatus()).isEqualTo(FlightStatus.LANDED);
         assertThat(flight.getActualArrivalTime()).isNotNull();
-        verify(repository).saveAll(List.of(flight));
+        verify(flightRepository).saveAll(List.of(flight));
     }
 
 
     @Test
     void shouldDoNothingWhenNoFlightsMatch() {
-        when(repository.findByStatusAndScheduledDepartureTimeBefore(
+        when(flightRepository.findByStatusAndScheduledDepartureTimeBefore(
                 eq(FlightStatus.SCHEDULED), any(OffsetDateTime.class)))
                 .thenReturn(List.of());
 
-        when(repository.findByStatusAndScheduledDepartureTimeBefore(
+        when(flightRepository.findByStatusAndScheduledDepartureTimeBefore(
                 eq(FlightStatus.BOARDING), any(OffsetDateTime.class)))
                 .thenReturn(List.of());
 
-        when(repository.findByStatusAndScheduledArrivalTimeBefore(
+        when(flightRepository.findByStatusAndScheduledArrivalTimeBefore(
                 eq(FlightStatus.EN_ROUTE), any(OffsetDateTime.class)))
                 .thenReturn(List.of());
 
         service.progressFlightStatuses();
 
-        verify(repository, times(3)).saveAll(List.of());
+        verify(flightRepository, times(3)).saveAll(List.of());
     }
 
 
     @Test
     void shouldQueryBoardingWindowTenMinutesAhead() {
-        when(repository.findByStatusAndScheduledDepartureTimeBefore(
+        when(flightRepository.findByStatusAndScheduledDepartureTimeBefore(
                 eq(FlightStatus.SCHEDULED), any(OffsetDateTime.class)))
                 .thenReturn(List.of());
 
-        when(repository.findByStatusAndScheduledDepartureTimeBefore(
+        when(flightRepository.findByStatusAndScheduledDepartureTimeBefore(
                 eq(FlightStatus.BOARDING), any(OffsetDateTime.class)))
                 .thenReturn(List.of());
 
-        when(repository.findByStatusAndScheduledArrivalTimeBefore(
+        when(flightRepository.findByStatusAndScheduledArrivalTimeBefore(
                 eq(FlightStatus.EN_ROUTE), any(OffsetDateTime.class)))
                 .thenReturn(List.of());
 
@@ -804,7 +805,7 @@ class FlightServiceTest {
         service.progressFlightStatuses();
 
         ArgumentCaptor<OffsetDateTime> captor = ArgumentCaptor.forClass(OffsetDateTime.class);
-        verify(repository).findByStatusAndScheduledDepartureTimeBefore(eq(FlightStatus.SCHEDULED), captor.capture());
+        verify(flightRepository).findByStatusAndScheduledDepartureTimeBefore(eq(FlightStatus.SCHEDULED), captor.capture());
 
         OffsetDateTime capturedThreshold = captor.getValue();
 
@@ -812,17 +813,149 @@ class FlightServiceTest {
         assertThat(capturedThreshold).isBefore(before.plusMinutes(11));
     }
 
+    @Test
+    void shouldAssignAircraftToUnknownFlightAndSetStatusToScheduled() {
+        Airport origin = airport(1L, "LOWW");
+        Airport destination = airport(2L, "KJFK");
+        Route route = route(10L, origin, destination);
+
+        Flight flight = flightWithStatus(route, FlightStatus.UNKNOWN);
+        Aircraft aircraft = aircraft(10L, AircraftStatus.IN_SERVICE);
+
+        when(flightRepository.findById(1L))
+                .thenReturn(Optional.of(flight));
+
+        when(aircraftRepository.findById(10L))
+                .thenReturn(Optional.of(aircraft));
+
+        when(flightRepository.findByAircraft_Id(10L))
+                .thenReturn(List.of());
+
+        when(flightRepository.save(any(Flight.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        FlightResponse result = service.assignAircraft(1L, 10L);
+
+        assertThat(result.status()).isEqualTo(FlightStatus.SCHEDULED);
+        assertThat(flight.getAircraft()).isSameAs(aircraft);
+
+        verify(flightRepository).save(flight);
+    }
+
+    @ParameterizedTest
+    @EnumSource(
+            value = FlightStatus.class,
+            names = {
+                    "BOARDING",
+                    "EN_ROUTE",
+                    "APPROACH",
+                    "LANDED",
+                    "DELAYED",
+                    "CANCELLED"
+            }
+    )
+    void shouldRejectAircraftAssignmentForInvalidFlightStatus(FlightStatus status) {
+        Airport origin = airport(1L, "LOWW");
+        Airport destination = airport(2L, "KJFK");
+        Route route = route(10L, origin, destination);
+
+        Flight flight = flightWithStatus(route, status);
+
+        when(flightRepository.findById(1L))
+                .thenReturn(Optional.of(flight));
+
+        assertThatThrownBy(() ->
+                service.assignAircraft(1L, 10L)
+        )
+                .isInstanceOf(AircraftAssignmentNotAllowedException.class)
+                .hasMessageContaining(status.name());
+
+        verify(aircraftRepository, never()).findById(anyLong());
+        verify(flightRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldAllowReassigningSameAircraftToSameFlight() {
+        Route route = route(
+                10L,
+                airport(1L, "LOWW"),
+                airport(2L, "KJFK")
+        );
+
+        Flight flight = flightWithStatus(route, FlightStatus.SCHEDULED);
+        ReflectionTestUtils.setField(flight, "id", 1L);
+
+        Aircraft aircraft = aircraft(5L, AircraftStatus.IN_SERVICE);
+        ReflectionTestUtils.setField(flight, "aircraft", aircraft);
+
+        when(flightRepository.findById(1L))
+                .thenReturn(Optional.of(flight));
+
+        when(aircraftRepository.findById(5L))
+                .thenReturn(Optional.of(aircraft));
+
+        when(flightRepository.findByAircraft_Id(5L))
+                .thenReturn(List.of(flight));
+
+        when(flightRepository.save(any(Flight.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        FlightResponse result = service.assignAircraft(1L, 5L);
+
+        assertThat(result.id()).isEqualTo(1L);
+        assertThat(result.status()).isEqualTo(FlightStatus.SCHEDULED);
+        assertThat(flight.getAircraft()).isSameAs(aircraft);
+
+        verify(flightRepository).save(flight);
+    }
+
+    @Test
+    void shouldRejectFlightWhenDepartureTimeIsMissing() {
+        FlightCreateRequest request = new FlightCreateRequest(
+                "OS123",
+                10L,
+                null,
+                OffsetDateTime.now().plusHours(2)
+        );
+
+        assertThatThrownBy(() -> service.createFlight(request))
+                .isInstanceOf(InvalidFlightTimeException.class);
+
+        verify(routeRepository, never()).findById(any());
+        verify(flightRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldRejectFlightWhenArrivalTimeIsMissing() {
+        FlightCreateRequest request = new FlightCreateRequest(
+                "OS123",
+                10L,
+                OffsetDateTime.now(),
+                null
+        );
+
+        assertThatThrownBy(() -> service.createFlight(request))
+                .isInstanceOf(InvalidFlightTimeException.class);
+
+        verify(routeRepository, never()).findById(any());
+        verify(flightRepository, never()).save(any());
+    }
 
     private Flight flightWithTimes(Route route, OffsetDateTime departure, OffsetDateTime arrival) {
         return new Flight("OS123", route, departure, arrival);
     }
 
     private Aircraft aircraft(Long id, AircraftStatus status) {
-        Aircraft aircraft = mock(Aircraft.class);
         AircraftType aircraftType = mock(AircraftType.class);
-        when(aircraft.getId()).thenReturn(id);
-        when(aircraft.getStatus()).thenReturn(status);
-        when(aircraft.getAircraftType()).thenReturn(aircraftType);
+
+        Aircraft aircraft = new Aircraft(
+                aircraftType,
+                "OE-TEST"
+        );
+
+        ReflectionTestUtils.setField(aircraft, "id", id);
+        ReflectionTestUtils.setField(aircraft, "status", status);
+
         return aircraft;
     }
 
