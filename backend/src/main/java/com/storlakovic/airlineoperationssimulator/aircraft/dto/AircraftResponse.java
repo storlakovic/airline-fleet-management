@@ -4,7 +4,7 @@ import com.storlakovic.airlineoperationssimulator.aircraft.Aircraft;
 import com.storlakovic.airlineoperationssimulator.aircraft.AircraftStatus;
 
 public record AircraftResponse(Long id, String registration, Long aircraftTypeId, String aircraftTypeModel,
-                               String icaoCode, AircraftStatus status) {
+                               String aircraftTypeIcaoCode, String aircraftTypeManufacturer, AircraftStatus status) {
 
     public static AircraftResponse from(Aircraft aircraft) {
         return new AircraftResponse(
@@ -13,6 +13,7 @@ public record AircraftResponse(Long id, String registration, Long aircraftTypeId
                 aircraft.getAircraftType().getId(),
                 aircraft.getAircraftType().getModel(),
                 aircraft.getAircraftType().getIcaoCode(),
+                aircraft.getAircraftType().getManufacturer(),
                 aircraft.getStatus()
         );
     }

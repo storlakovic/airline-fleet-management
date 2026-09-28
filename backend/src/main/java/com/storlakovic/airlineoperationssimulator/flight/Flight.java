@@ -82,10 +82,6 @@ public class Flight {
         return status;
     }
 
-    public String getAirline() {
-        return airline;
-    }
-
     public Aircraft getAircraft() {
         return aircraft;
     }
@@ -116,5 +112,12 @@ public class Flight {
 
     public void setActualArrivalTime(OffsetDateTime actualArrivalTime) {
         this.actualArrivalTime = actualArrivalTime;
+    }
+
+    public boolean isActive() {
+        return switch (this.status) {
+            case FlightStatus.SCHEDULED, FlightStatus.BOARDING, FlightStatus.EN_ROUTE, FlightStatus.APPROACH, FlightStatus.DELAYED -> true;
+            case FlightStatus.LANDED, FlightStatus.CANCELLED, FlightStatus.UNKNOWN -> false;
+        };
     }
 }

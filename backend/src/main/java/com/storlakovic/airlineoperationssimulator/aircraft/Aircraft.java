@@ -16,7 +16,7 @@ public class Aircraft {
     @Column(nullable = false, unique = true, length = 10)
     private String registration;
 
-    @ManyToOne(optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     private AircraftType aircraftType;
 
     @Enumerated(EnumType.STRING)

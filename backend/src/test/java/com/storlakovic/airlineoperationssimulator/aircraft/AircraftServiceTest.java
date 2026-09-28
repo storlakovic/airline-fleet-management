@@ -1,7 +1,6 @@
 package com.storlakovic.airlineoperationssimulator.aircraft;
 
 import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftCreateRequest;
-import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftDetailsResponse;
 import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftResponse;
 import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftUpdateRequest;
 import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftType;
@@ -10,7 +9,7 @@ import com.storlakovic.airlineoperationssimulator.aircrafttype.exceptions.Aircra
 import com.storlakovic.airlineoperationssimulator.airport.Airport;
 import com.storlakovic.airlineoperationssimulator.airport.AirportStatus;
 import com.storlakovic.airlineoperationssimulator.aircraft.exceptions.AircraftAlreadyExistsException;
-import com.storlakovic.airlineoperationssimulator.aircraft.exceptions.AircraftDeletionNotAllowedException;
+import com.storlakovic.airlineoperationssimulator.aircraft.exceptions.AircraftRetirementNotAllowedException;
 import com.storlakovic.airlineoperationssimulator.aircraft.exceptions.AircraftNotFoundException;
 import com.storlakovic.airlineoperationssimulator.aircraft.exceptions.AircraftStatusTransitionException;
 
@@ -33,7 +32,7 @@ import static org.mockito.Mockito.*;
 
 class AircraftServiceTest {
 
-    private final AircraftRepository repository =
+    private final AircraftRepository aircraftRepository =
             mock(AircraftRepository.class);
 
     private final AircraftTypeRepository aircraftTypeRepository =
@@ -43,7 +42,7 @@ class AircraftServiceTest {
             mock(FlightRepository.class);
 
     private final AircraftService service =
-            new AircraftService(repository, aircraftTypeRepository, flightRepository);
+            new AircraftService(aircraftRepository, aircraftTypeRepository, flightRepository);
 
 
     @Test
@@ -62,7 +61,7 @@ class AircraftServiceTest {
         when(aircraftTypeRepository.findById(1L))
                 .thenReturn(Optional.of(aircraftType));
 
-        when(repository.save(any(Aircraft.class)))
+        when(aircraftRepository.save(any(Aircraft.class)))
                 .thenAnswer(invocation -> {
                     Aircraft aircraft = invocation.getArgument(0);
 
@@ -108,7 +107,7 @@ class AircraftServiceTest {
         when(aircraftTypeRepository.findById(1L))
                 .thenReturn(Optional.of(aircraftType));
 
-        when(repository.save(any(Aircraft.class)))
+        when(aircraftRepository.save(any(Aircraft.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         AircraftResponse result =
@@ -131,7 +130,7 @@ class AircraftServiceTest {
                 service.addAircraftToFleet(request)
         ).isInstanceOf(AircraftTypeNotFoundException.class);
 
-        verify(repository, never())
+        verify(aircraftRepository, never())
                 .save(any(Aircraft.class));
     }
 
@@ -141,14 +140,14 @@ class AircraftServiceTest {
         AircraftCreateRequest request =
                 new AircraftCreateRequest(1L, "OE-LBA");
 
-        when(repository.existsAircraftByRegistration("OE-LBA"))
+        when(aircraftRepository.existsAircraftByRegistration("OE-LBA"))
                 .thenReturn(true);
 
         assertThatThrownBy(() ->
                 service.addAircraftToFleet(request)
         ).isInstanceOf(AircraftAlreadyExistsException.class);
 
-        verify(repository, never())
+        verify(aircraftRepository, never())
                 .save(any(Aircraft.class));
 
         verifyNoInteractions(aircraftTypeRepository);
@@ -179,7 +178,7 @@ class AircraftServiceTest {
                         "OE-LBB"
                 );
 
-        when(repository.findAll())
+        when(aircraftRepository.findAll())
                 .thenReturn(List.of(first, second));
 
         List<AircraftResponse> result =
@@ -206,7 +205,7 @@ class AircraftServiceTest {
                         "OE-LBA"
                 );
 
-        when(repository.findAll())
+        when(aircraftRepository.findAll())
                 .thenReturn(List.of(aircraft));
 
         List<AircraftResponse> result =
@@ -231,7 +230,7 @@ class AircraftServiceTest {
 
     @Test
     void shouldReturnEmptyListWhenNoAircraftExist() {
-        when(repository.findAll())
+        when(aircraftRepository.findAll())
                 .thenReturn(List.of());
 
         List<AircraftResponse> result =
@@ -265,7 +264,7 @@ class AircraftServiceTest {
                         "OE-LBB"
                 );
 
-        when(repository.findAll())
+        when(aircraftRepository.findAll())
                 .thenReturn(List.of(first, second));
 
         List<AircraftResponse> result =
@@ -278,7 +277,7 @@ class AircraftServiceTest {
 
 
     @Test
-    void shouldReturnDetailedAircraft() {
+    void shouldReturnAircraftResponse() {
         AircraftType aircraftType =
                 createAircraftType(
                         5L,
@@ -294,10 +293,10 @@ class AircraftServiceTest {
                         "OE-LBA"
                 );
 
-        when(repository.findById(1L))
+        when(aircraftRepository.findById(1L))
                 .thenReturn(Optional.of(aircraft));
 
-        AircraftDetailsResponse result =
+        AircraftResponse result =
                 service.getAircraftById(1L);
 
         assertThat(result.id())
@@ -312,20 +311,20 @@ class AircraftServiceTest {
         assertThat(result.aircraftTypeId())
                 .isEqualTo(5L);
 
-        assertThat(result.manufacturer())
+        assertThat(result.aircraftTypeManufacturer())
                 .isEqualTo("AIRBUS");
 
         assertThat(result.aircraftTypeModel())
                 .isEqualTo("Airbus A320");
 
-        assertThat(result.icaoCode())
+        assertThat(result.aircraftTypeIcaoCode())
                 .isEqualTo("A320");
     }
 
 
     @Test
     void shouldThrowExceptionWhenAircraftDoesNotExist() {
-        when(repository.findById(999L))
+        when(aircraftRepository.findById(999L))
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() ->
@@ -350,10 +349,10 @@ class AircraftServiceTest {
                         "OE-LBA"
                 );
 
-        when(repository.findById(10L))
+        when(aircraftRepository.findById(10L))
                 .thenReturn(Optional.of(aircraft));
 
-        when(repository.save(aircraft))
+        when(aircraftRepository.save(aircraft))
                 .thenReturn(aircraft);
 
         AircraftResponse result =
@@ -365,12 +364,12 @@ class AircraftServiceTest {
         assertThat(result.status())
                 .isEqualTo(AircraftStatus.MAINTENANCE);
 
-        verify(repository).save(aircraft);
+        verify(aircraftRepository).save(aircraft);
     }
 
     @Test
     void shouldThrowExceptionWhenUpdatingMissingAircraft() {
-        when(repository.findById(999L))
+        when(aircraftRepository.findById(999L))
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() ->
@@ -380,12 +379,65 @@ class AircraftServiceTest {
                 )
         ).isInstanceOf(AircraftNotFoundException.class);
 
-        verify(repository, never())
+        verify(aircraftRepository, never())
                 .save(any(Aircraft.class));
     }
 
     @Test
-    void shouldThrowExceptionForInvalidStatusTransition() {
+    void shouldRejectStatusChangeForRetiredAircraft() {
+        AircraftType aircraftType = createAircraftType(
+                1L,
+                "AIRBUS",
+                "Airbus A320",
+                "A320"
+        );
+
+        Aircraft aircraft = createAircraft(
+                10L,
+                aircraftType,
+                "OE-LBA"
+        );
+
+        ReflectionTestUtils.setField(
+                aircraft,
+                "status",
+                AircraftStatus.RETIRED
+        );
+
+        when(aircraftRepository.findById(10L))
+                .thenReturn(Optional.of(aircraft));
+
+        assertThatThrownBy(() ->
+                service.updateAircraft(
+                        10L,
+                        new AircraftUpdateRequest(AircraftStatus.MAINTENANCE)
+                )
+        )
+                .isInstanceOf(AircraftStatusTransitionException.class);
+
+        verify(aircraftRepository, never())
+                .save(any(Aircraft.class));
+    }
+
+    @Test
+    void shouldThrowWhenRetiringNonExistingAircraft() {
+        when(aircraftRepository.findById(99L))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() ->
+                service.retireAircraft(99L)
+        )
+                .isInstanceOf(AircraftNotFoundException.class)
+                .hasMessage("Aircraft with id 99 not found");
+
+        verify(aircraftRepository, never())
+                .save(any(Aircraft.class));
+
+        verifyNoInteractions(flightRepository);
+    }
+
+    @Test
+    void shouldRetireAircraftWithoutActiveFlights() {
         AircraftType aircraftType =
                 createAircraftType(
                         1L,
@@ -401,68 +453,147 @@ class AircraftServiceTest {
                         "OE-LBA"
                 );
 
-        ReflectionTestUtils.setField(
-                aircraft,
-                "status",
-                AircraftStatus.RETIRED
-        );
+        when(aircraftRepository.findById(10L))
+                .thenReturn(Optional.of(aircraft));
 
-        when(repository.findById(10L))
+        when(flightRepository.findByAircraft_Id(10L))
+                .thenReturn(List.of());
+
+        when(aircraftRepository.save(aircraft))
+                .thenReturn(aircraft);
+
+        AircraftResponse result =
+                service.retireAircraft(10L);
+
+        assertThat(result.status())
+                .isEqualTo(AircraftStatus.RETIRED);
+
+        verify(aircraftRepository).save(aircraft);
+    }
+
+    @Test
+    void shouldRejectRetirementWhenAircraftHasActiveFlight() {
+        AircraftType aircraftType =
+                createAircraftType(
+                        1L,
+                        "AIRBUS",
+                        "Airbus A320",
+                        "A320"
+                );
+
+        Aircraft aircraft =
+                createAircraft(
+                        10L,
+                        aircraftType,
+                        "OE-LBA"
+                );
+
+        Route route =
+                route(
+                        10L,
+                        airport(1L, "LOWW"),
+                        airport(2L, "KJFK")
+                );
+
+        Flight flight =
+                flightWithStatus(
+                        route,
+                        FlightStatus.SCHEDULED
+                );
+
+        when(aircraftRepository.findById(10L))
+                .thenReturn(Optional.of(aircraft));
+
+        when(flightRepository.findByAircraft_Id(10L))
+                .thenReturn(List.of(flight));
+
+        assertThatThrownBy(() ->
+                service.retireAircraft(10L)
+        )
+                .isInstanceOf(AircraftRetirementNotAllowedException.class);
+
+        verify(aircraftRepository, never())
+                .save(any(Aircraft.class));
+    }
+
+    @Test
+    void shouldAllowRetirementWhenAircraftHasOnlyLandedFlights() {
+        AircraftType aircraftType =
+                createAircraftType(
+                        1L,
+                        "AIRBUS",
+                        "Airbus A320",
+                        "A320"
+                );
+
+        Aircraft aircraft =
+                createAircraft(
+                        10L,
+                        aircraftType,
+                        "OE-LBA"
+                );
+
+        Route route =
+                route(
+                        10L,
+                        airport(1L, "LOWW"),
+                        airport(2L, "KJFK")
+                );
+
+        Flight flight =
+                flightWithStatus(
+                        route,
+                        FlightStatus.LANDED
+                );
+
+        when(aircraftRepository.findById(10L))
+                .thenReturn(Optional.of(aircraft));
+
+        when(flightRepository.findByAircraft_Id(10L))
+                .thenReturn(List.of(flight));
+
+        when(aircraftRepository.save(aircraft))
+                .thenReturn(aircraft);
+
+        AircraftResponse result =
+                service.retireAircraft(10L);
+
+        assertThat(result.status())
+                .isEqualTo(AircraftStatus.RETIRED);
+
+        verify(aircraftRepository).save(aircraft);
+    }
+
+    @Test
+    void shouldRejectRetirementThroughRegularStatusUpdate() {
+        AircraftType aircraftType =
+                createAircraftType(
+                        1L,
+                        "AIRBUS",
+                        "Airbus A320",
+                        "A320"
+                );
+
+        Aircraft aircraft =
+                createAircraft(
+                        10L,
+                        aircraftType,
+                        "OE-LBA"
+                );
+
+        when(aircraftRepository.findById(10L))
                 .thenReturn(Optional.of(aircraft));
 
         assertThatThrownBy(() ->
                 service.updateAircraft(
                         10L,
-                        new  AircraftUpdateRequest(AircraftStatus.RETIRED)
+                        new AircraftUpdateRequest(AircraftStatus.RETIRED)
                 )
-        ).isInstanceOf(AircraftStatusTransitionException.class);
+        )
+                .isInstanceOf(AircraftRetirementNotAllowedException.class);
 
-        verify(repository, never())
+        verify(aircraftRepository, never())
                 .save(any(Aircraft.class));
-    }
-
-    @Test
-    void shouldDeleteExistingAircraft() {
-        when(repository.existsById(1L))
-                .thenReturn(true);
-
-        service.deleteAircraft(1L);
-
-        verify(repository).deleteById(1L);
-    }
-
-
-    @Test
-    void shouldThrowWhenDeletingNonExistingAircraft() {
-        when(repository.existsById(99L))
-                .thenReturn(false);
-
-        assertThatThrownBy(() ->
-                service.deleteAircraft(99L)
-        )
-                .isInstanceOf(AircraftNotFoundException.class)
-                .hasMessage("Aircraft with id 99 not found");
-
-        verify(repository, never())
-                .deleteById(any());
-    }
-
-    @Test
-    void shouldThrowWhenDeletingAircraftInActiveFlight() {
-        Route route = route(10L, airport(1L, "LOWW"), airport(2L, "KJFK"));
-        Flight flight = flightWithStatus(route, FlightStatus.SCHEDULED);
-
-        when(repository.existsById(10L)).thenReturn(true);
-        when(flightRepository.findByAircraft_Id(10L)).thenReturn(Optional.of(flight).stream().toList());
-
-        assertThatThrownBy(() ->
-                service.deleteAircraft(10L)
-        )
-                .isInstanceOf(AircraftDeletionNotAllowedException.class)
-                .hasMessage("Aircraft with id 10 cannot be deleted, because it is assigned to an active flight");
-
-        verify(repository, never())
-                .deleteById(any());
     }
 
     private Flight flightWithStatus(Route route, FlightStatus status) {
