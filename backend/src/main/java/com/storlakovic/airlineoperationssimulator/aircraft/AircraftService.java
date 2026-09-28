@@ -38,7 +38,7 @@ public class AircraftService {
         }
 
         AircraftType aircraftType = aircraftTypeRepository.findById(request.aircraftTypeId()).orElseThrow(() -> new AircraftTypeNotFoundException(
-                "Aircraft with id " + request.aircraftTypeId() + " not found"
+                "Aircraft type with id " + request.aircraftTypeId() + " not found"
         ));
 
         Aircraft aircraft = new Aircraft(

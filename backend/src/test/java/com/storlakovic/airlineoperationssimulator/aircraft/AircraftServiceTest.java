@@ -311,13 +311,13 @@ class AircraftServiceTest {
         assertThat(result.aircraftTypeId())
                 .isEqualTo(5L);
 
-        assertThat(result.manufacturer())
+        assertThat(result.aircraftTypeManufacturer())
                 .isEqualTo("AIRBUS");
 
         assertThat(result.aircraftTypeModel())
                 .isEqualTo("Airbus A320");
 
-        assertThat(result.icaoCode())
+        assertThat(result.aircraftTypeIcaoCode())
                 .isEqualTo("A320");
     }
 
