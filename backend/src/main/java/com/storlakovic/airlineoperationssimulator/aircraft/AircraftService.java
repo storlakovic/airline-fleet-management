@@ -2,7 +2,6 @@ package com.storlakovic.airlineoperationssimulator.aircraft;
 
 
 import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftCreateRequest;
-import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftDetailsResponse;
 import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftResponse;
 import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftUpdateRequest;
 import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftType;
@@ -55,11 +54,11 @@ public class AircraftService {
         return aircraftRepository.findAll().stream().map(AircraftResponse::from).toList();
     }
 
-    public AircraftDetailsResponse getAircraftById(Long id) {
+    public AircraftResponse getAircraftById(Long id) {
         Aircraft aircraft = aircraftRepository.findById(id).orElseThrow(() -> new AircraftNotFoundException(
                 "Aircraft with id " + id + " not found"
         ));
-        return AircraftDetailsResponse.from(aircraft);
+        return AircraftResponse.from(aircraft);
     }
 
     public AircraftResponse updateAircraft(Long aircraftId, AircraftUpdateRequest request) {

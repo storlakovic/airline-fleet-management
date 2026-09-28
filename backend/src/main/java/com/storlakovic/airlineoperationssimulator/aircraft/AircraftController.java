@@ -1,7 +1,6 @@
 package com.storlakovic.airlineoperationssimulator.aircraft;
 
 import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftCreateRequest;
-import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftDetailsResponse;
 import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftResponse;
 import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftUpdateRequest;
 import org.springframework.http.HttpStatus;
@@ -36,7 +35,7 @@ public class AircraftController {
     }
 
     @GetMapping("/{id}")
-    public AircraftDetailsResponse getAircraftById(@PathVariable Long id) {
+    public AircraftResponse getAircraftById(@PathVariable Long id) {
         return aircraftService.getAircraftById(id);
     }
 

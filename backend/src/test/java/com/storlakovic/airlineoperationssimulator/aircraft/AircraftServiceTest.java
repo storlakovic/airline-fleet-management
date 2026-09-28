@@ -1,7 +1,6 @@
 package com.storlakovic.airlineoperationssimulator.aircraft;
 
 import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftCreateRequest;
-import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftDetailsResponse;
 import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftResponse;
 import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftUpdateRequest;
 import com.storlakovic.airlineoperationssimulator.aircrafttype.AircraftType;
@@ -297,7 +296,7 @@ class AircraftServiceTest {
         when(repository.findById(1L))
                 .thenReturn(Optional.of(aircraft));
 
-        AircraftDetailsResponse result =
+        AircraftResponse result =
                 service.getAircraftById(1L);
 
         assertThat(result.id())
@@ -312,7 +311,7 @@ class AircraftServiceTest {
         assertThat(result.aircraftTypeId())
                 .isEqualTo(5L);
 
-        assertThat(result.manufacturer())
+        assertThat(result.manufacture())
                 .isEqualTo("AIRBUS");
 
         assertThat(result.aircraftTypeModel())
