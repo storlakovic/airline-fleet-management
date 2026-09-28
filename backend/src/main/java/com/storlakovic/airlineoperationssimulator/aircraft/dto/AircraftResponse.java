@@ -4,7 +4,7 @@ import com.storlakovic.airlineoperationssimulator.aircraft.Aircraft;
 import com.storlakovic.airlineoperationssimulator.aircraft.AircraftStatus;
 
 public record AircraftResponse(Long id, String registration, Long aircraftTypeId, String aircraftTypeModel,
-                               String icaoCode, String manufacture, AircraftStatus status) {
+                               String icaoCode, String manufacturer, AircraftStatus status) {
 
     public static AircraftResponse from(Aircraft aircraft) {
         return new AircraftResponse(

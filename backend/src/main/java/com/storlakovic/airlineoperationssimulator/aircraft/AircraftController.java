@@ -3,7 +3,6 @@ package com.storlakovic.airlineoperationssimulator.aircraft;
 import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftCreateRequest;
 import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftResponse;
 import com.storlakovic.airlineoperationssimulator.aircraft.dto.AircraftUpdateRequest;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -39,9 +38,8 @@ public class AircraftController {
         return aircraftService.getAircraftById(id);
     }
 
-    @DeleteMapping("remove/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteAircraft(@PathVariable Long id) {
-        aircraftService.deleteAircraft(id);
+    @PutMapping("retire/{id}")
+    public AircraftResponse retireAircraft(@PathVariable Long id) {
+        return aircraftService.retireAircraft(id);
     }
 }
