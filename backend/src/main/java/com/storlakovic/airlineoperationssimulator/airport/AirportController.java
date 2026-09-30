@@ -3,6 +3,7 @@ package com.storlakovic.airlineoperationssimulator.airport;
 import com.storlakovic.airlineoperationssimulator.airport.dto.AirportDetailsResponse;
 import com.storlakovic.airlineoperationssimulator.airport.dto.AirportResponse;
 import com.storlakovic.airlineoperationssimulator.airport.dto.AirportUpdateRequest;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,7 +24,7 @@ public class AirportController {
     }
 
     @PutMapping(path = "/update/{id}")
-    public AirportResponse updateAirport(@PathVariable Long id, @RequestBody AirportUpdateRequest request) {
+    public AirportResponse updateAirport(@PathVariable Long id, @Valid @RequestBody AirportUpdateRequest request) {
         return airportService.updateAirport(id, request);
     }
 
