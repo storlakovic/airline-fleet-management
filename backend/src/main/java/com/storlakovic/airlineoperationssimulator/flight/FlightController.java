@@ -4,6 +4,7 @@ import com.storlakovic.airlineoperationssimulator.flight.dto.FlightCreateRequest
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightDetailedResponse;
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightResponse;
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightUpdateRequest;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,7 +20,7 @@ public class FlightController {
     }
 
     @PostMapping(path = "/create")
-    public FlightResponse createFlight(@RequestBody FlightCreateRequest createFlightRequest) {
+    public FlightResponse createFlight(@Valid @RequestBody FlightCreateRequest createFlightRequest) {
         return flightService.createFlight(createFlightRequest);
     }
 
