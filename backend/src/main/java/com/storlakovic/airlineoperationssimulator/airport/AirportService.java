@@ -37,6 +37,11 @@ public class AirportService {
         }
     }
 
+    public List<AirportResponse> getAllAirports() {
+        List<Airport> airports = repository.findAll();
+        return airports.stream().map(AirportResponse::from).toList();
+    }
+
 
     /**
      * Loads airports reference data from the OurAirports CSV file

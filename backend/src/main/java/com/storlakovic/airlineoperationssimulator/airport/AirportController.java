@@ -18,6 +18,11 @@ public class AirportController {
         this.airportService = airportService;
     }
 
+    @GetMapping
+    public List<AirportResponse> getAirports() {
+        return airportService.getAllAirports();
+    }
+
     @PostMapping(path = "/import")
     public List<AirportResponse> addAirports() {
         return airportService.importAirports();
