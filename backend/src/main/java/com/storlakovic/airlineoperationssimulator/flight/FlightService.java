@@ -9,10 +9,7 @@ import com.storlakovic.airlineoperationssimulator.flight.dto.FlightCreateRequest
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightDetailedResponse;
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightResponse;
 import com.storlakovic.airlineoperationssimulator.flight.dto.FlightUpdateRequest;
-import com.storlakovic.airlineoperationssimulator.flight.exceptions.AircraftAssignmentNotAllowedException;
-import com.storlakovic.airlineoperationssimulator.flight.exceptions.FlightCancellationNotAllowedException;
-import com.storlakovic.airlineoperationssimulator.flight.exceptions.FlightNotFoundException;
-import com.storlakovic.airlineoperationssimulator.flight.exceptions.InvalidFlightTimeException;
+import com.storlakovic.airlineoperationssimulator.flight.exceptions.*;
 import com.storlakovic.airlineoperationssimulator.route.Route;
 import com.storlakovic.airlineoperationssimulator.route.exceptions.RouteNotFoundException;
 import com.storlakovic.airlineoperationssimulator.route.RouteRepository;
@@ -75,6 +72,16 @@ public class FlightService {
     public FlightResponse updateFlight(FlightUpdateRequest request, Long id) {
         Flight flight = flightRepository.findById(id).orElseThrow(() -> new FlightNotFoundException("Flight with id: " + id + " not found"));
 
+        if (flight.getStatus() != FlightStatus.UNKNOWN
+                && flight.getStatus() != FlightStatus.SCHEDULED
+                && flight.getStatus() != FlightStatus.DELAYED) {
+            throw new FlightUpdateNotAllowedException(
+                    "Flight with id: " + id
+                            + " cannot be rescheduled from status "
+                            + flight.getStatus()
+            );
+        }
+
         OffsetDateTime newDeparture = request.scheduledDepartureTime() != null
                 ? request.scheduledDepartureTime()
                 : flight.getScheduledDepartureTime();
@@ -84,7 +91,37 @@ public class FlightService {
                 : flight.getScheduledArrivalTime();
 
         if (!newDeparture.isBefore(newArrival)) {
-            throw new InvalidFlightTimeException("Departure time must be before arrival time");
+            throw new InvalidFlightTimeException(
+                    "Departure time must be before arrival time"
+            );
+        }
+
+        if (flight.getAircraft() != null) {
+            List<Flight> existingFlights =
+                    flightRepository.findByAircraft_Id(
+                            flight.getAircraft().getId()
+                    );
+
+            boolean hasOverlap = existingFlights.stream()
+                    .filter(existing ->
+                            existing.getStatus() != FlightStatus.CANCELLED
+                    )
+                    .filter(existing ->
+                            !existing.getId().equals(flight.getId())
+                    )
+                    .anyMatch(existing ->
+                            newDeparture.isBefore(
+                                    existing.getScheduledArrivalTime()
+                            )
+                                    && existing.getScheduledDepartureTime()
+                                    .isBefore(newArrival)
+                    );
+
+            if (hasOverlap) {
+                throw new AircraftAlreadyAssignedException(
+                        "Aircraft is already assigned to an overlapping flight"
+                );
+            }
         }
 
         flight.setScheduledDepartureTime(newDeparture);
