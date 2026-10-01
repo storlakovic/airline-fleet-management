@@ -40,3 +40,7 @@ application-local.properties
 # Test / coverage output
 coverage/
 jacoco.exec
+
+# Frontend
+node_modules/
+frontend/dist/

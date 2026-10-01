@@ -193,32 +193,4 @@ public class FlightService {
 
         return FlightResponse.from(updatedFlight);
     }
-
-    public void progressFlightStatuses() {
-        OffsetDateTime now = OffsetDateTime.now();
-
-        List<Flight> toBoard = flightRepository.findByStatusAndScheduledDepartureTimeBefore(
-                FlightStatus.SCHEDULED, now.plusMinutes(10)
-        );
-        toBoard.forEach(flight -> flight.setStatus(FlightStatus.BOARDING));
-        flightRepository.saveAll(toBoard);
-
-        List<Flight> toDepart = flightRepository.findByStatusAndScheduledDepartureTimeBefore(
-                FlightStatus.BOARDING, now
-        );
-        toDepart.forEach(flight -> {
-            flight.setStatus(FlightStatus.EN_ROUTE);
-            flight.setActualDepartureTime(now);
-        });
-        flightRepository.saveAll(toDepart);
-
-        List<Flight> toLand = flightRepository.findByStatusAndScheduledArrivalTimeBefore(
-                FlightStatus.EN_ROUTE, now
-        );
-        toLand.forEach(flight -> {
-            flight.setStatus(FlightStatus.LANDED);
-            flight.setActualArrivalTime(now);
-        });
-        flightRepository.saveAll(toLand);
-    }
 }
