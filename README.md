@@ -8,11 +8,13 @@ The project is also intended to demonstrate a structured software engineering pr
 
 ## Current Status
 
-The project is currently in early implementation.
+The initial backend MVP is complete.
 
-The product vision, domain model, initial class diagram, user stories, acceptance criteria, technical tasks, and core architecture decisions have been defined.
+The main domain features have been implemented and reviewed, and the original MVP codebase has gone through a dedicated refactoring phase to improve consistency, feature ownership, validation, and maintainability.
 
-Backend development has started with a Spring Boot application and PostgreSQL as the primary database.
+An initial simulation feature is also implemented and provides automatic flight status progression.
+
+The next major development area is the user interface together with further expansion of the simulation system.
 
 ## MVP Scope
 
