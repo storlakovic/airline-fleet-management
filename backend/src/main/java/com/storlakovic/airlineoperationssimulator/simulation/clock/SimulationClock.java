@@ -1,13 +1,16 @@
 package com.storlakovic.airlineoperationssimulator.simulation.clock;
 
+import org.springframework.stereotype.Component;
+
 import java.time.Duration;
 import java.time.OffsetDateTime;
 
+@Component
 public class SimulationClock {
 
     private static OffsetDateTime baseRealTime = OffsetDateTime.now();
     private static OffsetDateTime baseSimulationTime = baseRealTime;
-    private static long speedMultiplier = 1;
+    public static long speedMultiplier = 1;
 
     public static void setTime(OffsetDateTime time) {
         baseRealTime = OffsetDateTime.now();
