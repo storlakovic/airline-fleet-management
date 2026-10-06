@@ -1,9 +1,8 @@
 package com.storlakovic.airlineoperationssimulator.simulation.clock;
 
 import com.storlakovic.airlineoperationssimulator.simulation.clock.dto.ClockResponse;
+import com.storlakovic.airlineoperationssimulator.simulation.clock.dto.ClockUpdateRequest;
 import org.springframework.stereotype.Service;
-
-import java.time.OffsetDateTime;
 
 @Service
 public class SimulationClockService {
@@ -12,8 +11,8 @@ public class SimulationClockService {
         return ClockResponse.from(SimulationClock.now(), SimulationClock.speedMultiplier);
     }
 
-    public ClockResponse setSimulatorTime(OffsetDateTime dateTime) {
-        SimulationClock.setTime(dateTime);
+    public ClockResponse setSimulatorTime(ClockUpdateRequest clockUpdateRequest) {
+        SimulationClock.setTime(clockUpdateRequest.dateTime());
         return ClockResponse.from(SimulationClock.now(), SimulationClock.speedMultiplier);
     }
 
