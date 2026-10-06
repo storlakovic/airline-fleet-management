@@ -1,18 +1,18 @@
 # Frontend
 
-React mit JSX: eine Flugtabelle und eine interaktive Globe.gl-Erdkugel.
+React mit TypeScript und TSX: eine Flugtabelle und eine interaktive Globe.gl-Erdkugel.
 
 ## Datenfluss
 
 `useHomeViewModel.ts` lädt einmal beim Öffnen mit `fetch('/api/flight')` die Flüge
-und liefert `flights`, `loading` und `error`. `HomeView.jsx` stellt diesen Zustand dar
+und liefert `flights`, `loading` und `error`. `HomeView.tsx` stellt diesen Zustand dar
 und übergibt die unveränderte `FlightResponse[]` an `FlightTable` und `FlightGlobe`.
 Das ViewModel ist ein einfacher React-Hook, ohne zusätzlichen Store oder Abonnementlogik.
 Die Tabelle zeigt alle Flüge, einschließlich gelandeter und stornierter Flüge.
 Es gibt keinen Filter, keine Suche, keinen Store und keinen Aktualisierungstimer.
 Zum erneuten Laden die Seite aktualisieren.
 
-Die Erdkugel benötigt zusätzlich Koordinaten. `FlightGlobe.jsx` lädt dafür
+Die Erdkugel benötigt zusätzlich Koordinaten. `FlightGlobe.tsx` lädt dafür
 `/api/airport` und die Details `/api/airport/{id}` der beteiligten Flughäfen.
 `globe/data.ts` übersetzt diese Responses in die Koordinaten für Globe.gl.
 Fehlende Koordinaten betreffen nur die Karte; der Flug bleibt in der Tabelle.
@@ -20,21 +20,21 @@ Die Requests werden beim Entfernen der Komponenten abgebrochen.
 
 ```text
 src/
-├── main.jsx
+├── main.tsx
 ├── models/responses/            # Typen entsprechend den Backend-DTOs
 ├── viewmodels/useHomeViewModel.ts # Direkter GET und Lade-/Fehlerzustand
 ├── views/
-│   ├── HomeView.jsx             # Darstellung des ViewModel-Zustands
+│   ├── HomeView.tsx             # Darstellung des ViewModel-Zustands
 │   ├── components/
-│   │   ├── FlightTable.jsx      # flights.map(...) als Tabelle
-│   │   └── FlightGlobe.jsx      # Koordinaten laden und Karte anzeigen
+│   │   ├── FlightTable.tsx      # flights.map(...) als Tabelle
+│   │   └── FlightGlobe.tsx      # Koordinaten laden und Karte anzeigen
 │   └── globe/                  # Globe.gl-Konfiguration und Routenkoordinaten
 ├── utils/date.ts                # UTC-Zeitformatierung
 └── styles/main.css
 ```
 
 Keine Demodaten. Kein Backend bedeutet eine Fehlermeldung statt erfundener Flüge.
-Die DTO-Typen bleiben in TypeScript, die React-Komponenten sind JSX.
+Die DTO-Typen bleiben in TypeScript, die React-Komponenten sind TSX.
 
 ## Starten und prüfen
 

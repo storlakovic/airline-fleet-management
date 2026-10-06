@@ -1,15 +1,26 @@
+import type { FlightResponse } from '../../models/responses/FlightResponse.ts';
+import type {
+  AirportResponse,
+  AirportDetailsResponse,
+} from '../../models/responses/AirportResponse.ts';
 import { useEffect, useRef, useState } from 'react';
 import { createGlobe } from '../globe/globe.ts';
 
-export default function FlightGlobe({ flights }) {
-  const container = useRef(null);
-  const globe = useRef(null);
+interface FlightGlobeProps {
+  flights: FlightResponse[];
+}
+
+export default function FlightGlobe({ flights }: FlightGlobeProps) {
+  const container = useRef<HTMLDivElement>(null);
+  const globe = useRef<ReturnType<typeof createGlobe> | null>(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    globe.current = createGlobe(container.current);
+    if (!container.current) return;
+    const instance = createGlobe(container.current);
+    globe.current = instance;
     return () => {
-      globe.current.destroy();
+      instance.destroy();
       globe.current = null;
     };
   }, []);
@@ -24,12 +35,12 @@ export default function FlightGlobe({ flights }) {
       try {
         const response = await fetch('/api/airport', { signal: controller.signal });
         if (!response.ok) throw new Error();
-        const airports = await response.json();
+        const airports: AirportResponse[] = await response.json();
         const codes = new Set(
           flights.flatMap((flight) => [flight.originIcaoCode, flight.destinationIcaoCode]),
         );
         const needed = airports.filter((airport) => codes.has(airport.icaoCode));
-        const details = [];
+        const details: AirportDetailsResponse[] = [];
         for (const airport of needed) {
           const response = await fetch(`/api/airport/${airport.id}`, { signal: controller.signal });
           if (!response.ok) throw new Error();

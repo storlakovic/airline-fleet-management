@@ -1,6 +1,6 @@
 import { useHomeViewModel } from '../viewmodels/useHomeViewModel.ts';
-import FlightTable from './components/FlightTable.jsx';
-import FlightGlobe from './components/FlightGlobe.jsx';
+import FlightTable from './components/FlightTable.tsx';
+import FlightGlobe from './components/FlightGlobe.tsx';
 
 export default function HomeView() {
   const { flights, loading, error } = useHomeViewModel();

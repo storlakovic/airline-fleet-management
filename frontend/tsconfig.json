@@ -11,8 +11,7 @@
     "skipLibCheck": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["vite/client", "node"],
-    "jsx": "react-jsx",
-    "allowJs": true
+    "jsx": "react-jsx"
   },
   "include": ["src/**/*", "vite.config.ts"]
 }

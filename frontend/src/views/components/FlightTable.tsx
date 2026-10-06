@@ -1,6 +1,12 @@
+import type { FlightResponse } from '../../models/responses/FlightResponse.ts';
 import { formatTime } from '../../utils/date.ts';
 
-export default function FlightTable({ flights, emptyMessage }) {
+interface FlightTableProps {
+  flights: FlightResponse[];
+  emptyMessage: string;
+}
+
+export default function FlightTable({ flights, emptyMessage }: FlightTableProps) {
   return (
     <div className="table-scroll">
       <table>
