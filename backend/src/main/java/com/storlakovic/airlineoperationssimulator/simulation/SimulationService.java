@@ -3,6 +3,7 @@ package com.storlakovic.airlineoperationssimulator.simulation;
 import com.storlakovic.airlineoperationssimulator.flight.Flight;
 import com.storlakovic.airlineoperationssimulator.flight.FlightRepository;
 import com.storlakovic.airlineoperationssimulator.flight.FlightStatus;
+import com.storlakovic.airlineoperationssimulator.simulation.clock.SimulationClock;
 import org.springframework.stereotype.Service;
 
 import java.time.OffsetDateTime;
@@ -20,7 +21,7 @@ public class SimulationService {
     }
 
     public void progressFlightStatuses() {
-        OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime now = SimulationClock.now();
 
         List<Flight> flights = flightRepository.findAll();
         List<Flight> updatedFlights = new ArrayList<>();
@@ -34,7 +35,6 @@ public class SimulationService {
                 updatedFlights.add(newFlight);
             }
         }
-
         flightRepository.saveAll(updatedFlights);
     }
 }
