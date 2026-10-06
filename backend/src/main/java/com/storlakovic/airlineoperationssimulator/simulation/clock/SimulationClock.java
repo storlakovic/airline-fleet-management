@@ -7,7 +7,7 @@ public class SimulationClock {
 
     private static OffsetDateTime baseRealTime = OffsetDateTime.now();
     private static OffsetDateTime baseSimulationTime = baseRealTime;
-    public static long speedMultiplier = 1;
+    private static long speedMultiplier = 1;
 
     public static void setTime(OffsetDateTime time) {
         baseRealTime = OffsetDateTime.now();
@@ -37,5 +37,9 @@ public class SimulationClock {
 
         resetBaseTime();
         speedMultiplier = newMultiplier;
+    }
+
+    public static long getSpeedMultiplier () {
+        return speedMultiplier;
     }
 }
