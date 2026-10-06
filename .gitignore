@@ -44,3 +44,9 @@ jacoco.exec
 # Frontend
 node_modules/
 frontend/dist/
+frontend/.vite/
+frontend/.vite-temp/
+frontend/.cache/
+frontend/.eslintcache
+frontend/.stylelintcache
+*.tsbuildinfo

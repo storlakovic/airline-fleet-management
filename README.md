@@ -53,3 +53,9 @@ More complex areas such as crew scheduling, passenger management, weather, maint
 ## Architecture
 
 The application is organized primarily by business feature
+
+## Operations UI
+
+The frontend contains one React homepage with a flight timetable and a
+Globe.gl route map. Flight data comes exclusively from the backend; 
+error handling and tests.
